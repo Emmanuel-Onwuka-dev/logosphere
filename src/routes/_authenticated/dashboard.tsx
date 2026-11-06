@@ -96,7 +96,7 @@ function RegisterChurch({ onDone }: { onDone: () => void }) {
     e.preventDefault(); setBusy(true);
     const { error } = await supabase.rpc("create_church", { _name: name, _city: city, _country: country });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Church registered"); onDone();
   }
   return (
