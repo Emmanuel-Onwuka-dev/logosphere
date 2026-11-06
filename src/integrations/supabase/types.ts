@@ -321,6 +321,84 @@ export type Database = {
           },
         ]
       }
+      playground_runs: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_by: string
+          endpoint_id: string | null
+          engine_id: string | null
+          error: string | null
+          id: string
+          input_bytes: number | null
+          input_name: string | null
+          latency_ms: number | null
+          notes: string | null
+          ok: boolean
+          output_kind: string | null
+          output_text: string | null
+          rating: number | null
+          source_language: string
+          status_code: number | null
+          target_language: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_by?: string
+          endpoint_id?: string | null
+          engine_id?: string | null
+          error?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_name?: string | null
+          latency_ms?: number | null
+          notes?: string | null
+          ok?: boolean
+          output_kind?: string | null
+          output_text?: string | null
+          rating?: number | null
+          source_language: string
+          status_code?: number | null
+          target_language: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_by?: string
+          endpoint_id?: string | null
+          engine_id?: string | null
+          error?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_name?: string | null
+          latency_ms?: number | null
+          notes?: string | null
+          ok?: boolean
+          output_kind?: string | null
+          output_text?: string | null
+          rating?: number | null
+          source_language?: string
+          status_code?: number | null
+          target_language?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playground_runs_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "inference_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playground_runs_engine_id_fkey"
+            columns: ["engine_id"]
+            isOneToOne: false
+            referencedRelation: "ai_engines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           church_id: string | null
