@@ -60,7 +60,10 @@ function Dashboard() {
             <span className="grid size-8 place-items-center rounded-lg border-[1.5px] border-foreground"><Radio className="size-4" /></span>
             <span className="font-display text-xl tracking-tight">Logosphere</span>
           </Link>
+          <div className="flex items-center gap-2">
+          {data?.roles.some((r) => r.role === "platform_admin") && <Link to="/control" className="rounded-full border px-4 py-2 text-sm">Control Centre</Link>}
           <button onClick={signOut} className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm"><LogOut className="size-3.5" /> Sign out</button>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-12">
