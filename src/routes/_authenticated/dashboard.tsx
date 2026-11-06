@@ -6,6 +6,7 @@ import { Building2, LogOut, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChurchSessions } from "@/components/dashboard/ChurchSessions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -74,12 +75,14 @@ function Dashboard() {
             </div>
             <div className="mt-10">
               {data.church ? (
-                <div className="rounded-3xl border bg-card p-7 shadow-card">
-                  <Building2 className="size-5" />
-                  <p className="mt-6 font-display text-3xl">{data.church.name}</p>
-                  <p className="mt-1 text-muted-foreground">{[data.church.city, data.church.country].filter(Boolean).join(" · ")}</p>
-                  <p className="mt-6 text-sm text-muted-foreground">Live sessions and team invites are coming in the next phase.</p>
-                </div>
+                <>
+                  <div className="flex items-center gap-3">
+                    <Building2 className="size-5" />
+                    <p className="font-display text-2xl">{data.church.name}</p>
+                    <p className="text-muted-foreground">{[data.church.city, data.church.country].filter(Boolean).join(" · ")}</p>
+                  </div>
+                  <ChurchSessions churchId={data.church.id} canOperate={data.roles.some((r) => ["church_admin", "media_operator", "platform_admin"].includes(r.role))} userId={user.id} />
+                </>
               ) : <RegisterChurch onDone={() => qc.invalidateQueries({ queryKey: ["me"] })} />}
             </div>
           </>
