@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_engines: {
+        Row: {
+          created_at: string
+          deployment_type: string
+          engine_name: string
+          engine_type: string
+          id: string
+          input_format: string | null
+          max_concurrency: number | null
+          model_id: string | null
+          model_version: string | null
+          output_format: string | null
+          provider_id: string
+          status: string
+          streaming: boolean
+          supported_language_pairs: string[]
+          supported_languages: string[]
+          timeout_ms: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deployment_type?: string
+          engine_name: string
+          engine_type?: string
+          id?: string
+          input_format?: string | null
+          max_concurrency?: number | null
+          model_id?: string | null
+          model_version?: string | null
+          output_format?: string | null
+          provider_id: string
+          status?: string
+          streaming?: boolean
+          supported_language_pairs?: string[]
+          supported_languages?: string[]
+          timeout_ms?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deployment_type?: string
+          engine_name?: string
+          engine_type?: string
+          id?: string
+          input_format?: string | null
+          max_concurrency?: number | null
+          model_id?: string | null
+          model_version?: string | null
+          output_format?: string | null
+          provider_id?: string
+          status?: string
+          streaming?: boolean
+          supported_language_pairs?: string[]
+          supported_languages?: string[]
+          timeout_ms?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_engines_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_providers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          provider_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          provider_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          provider_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       churches: {
         Row: {
           city: string | null
@@ -43,6 +141,150 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      endpoint_checks: {
+        Row: {
+          checked_at: string
+          endpoint_id: string
+          error: string | null
+          id: string
+          latency_ms: number | null
+          ok: boolean
+          status_code: number | null
+        }
+        Insert: {
+          checked_at?: string
+          endpoint_id: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok: boolean
+          status_code?: number | null
+        }
+        Update: {
+          checked_at?: string
+          endpoint_id?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok?: boolean
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "endpoint_checks_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "inference_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engine_assignments: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          engine_id: string
+          id: string
+          priority: number
+          processing_mode: string
+          source_language: string
+          target_language: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          engine_id: string
+          id?: string
+          priority?: number
+          processing_mode?: string
+          source_language: string
+          target_language: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          engine_id?: string
+          id?: string
+          priority?: number
+          processing_mode?: string
+          source_language?: string
+          target_language?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engine_assignments_engine_id_fkey"
+            columns: ["engine_id"]
+            isOneToOne: false
+            referencedRelation: "ai_engines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inference_endpoints: {
+        Row: {
+          auth_method: string
+          created_at: string
+          endpoint_name: string
+          endpoint_type: string
+          endpoint_url: string | null
+          engine_id: string
+          healthcheck_url: string | null
+          id: string
+          last_checked_at: string | null
+          last_error: string | null
+          last_latency_ms: number | null
+          secret_ref: string | null
+          status: string
+          updated_at: string
+          websocket_url: string | null
+        }
+        Insert: {
+          auth_method?: string
+          created_at?: string
+          endpoint_name: string
+          endpoint_type?: string
+          endpoint_url?: string | null
+          engine_id: string
+          healthcheck_url?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_latency_ms?: number | null
+          secret_ref?: string | null
+          status?: string
+          updated_at?: string
+          websocket_url?: string | null
+        }
+        Update: {
+          auth_method?: string
+          created_at?: string
+          endpoint_name?: string
+          endpoint_type?: string
+          endpoint_url?: string | null
+          engine_id?: string
+          healthcheck_url?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_latency_ms?: number | null
+          secret_ref?: string | null
+          status?: string
+          updated_at?: string
+          websocket_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inference_endpoints_engine_id_fkey"
+            columns: ["engine_id"]
+            isOneToOne: false
+            referencedRelation: "ai_engines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       listener_connections: {
         Row: {
