@@ -228,12 +228,12 @@ function Editor({ table, fields, initial, onDone }: { table: string; fields: Fie
           <Label htmlFor={f.k}>{f.label}</Label>
           {f.type === "select" ? (
             <select id={f.k} value={v[f.k] ?? ""} onChange={(e) => setV({ ...v, [f.k]: e.target.value })} className="h-10 w-full rounded-md border bg-background px-3 text-sm" required>
-              {(f.options ?? []).map((o) => { const [val, lab] = o.split("|"); return <option key={val} value={val}>{nice(lab ?? val)}</option>; })}
+              {(f.options ?? []).map((o) => { const [val, lab] = o.split("|"); return <option key={val} value={val}>{nice(lab ?? val ?? "")}</option>; })}
             </select>
           ) : f.type === "bool" ? (
             <div className="pt-2"><Switch id={f.k} checked={!!v[f.k]} onCheckedChange={(c) => setV({ ...v, [f.k]: c })} /></div>
           ) : (
-            <Input id={f.k} type={f.type === "number" ? "number" : "text"} value={Array.isArray(v[f.k]) ? v[f.k].join(", ") : v[f.k] ?? ""} onChange={(e) => setV({ ...v, [f.k]: e.target.value })} required={fields[0].k === f.k} />
+            <Input id={f.k} type={f.type === "number" ? "number" : "text"} value={Array.isArray(v[f.k]) ? v[f.k].join(", ") : v[f.k] ?? ""} onChange={(e) => setV({ ...v, [f.k]: e.target.value })} required={fields[0]?.k === f.k} />
           )}
           {f.hint && <p className="text-[11px] text-muted-foreground">{f.hint}</p>}
         </div>
