@@ -63,7 +63,7 @@ function Lab() {
   const [results, setResults] = useState<Result[]>([]);
 
   function takeClip(blob: Blob, name: string) {
-    if (blob.size > MAX) return toast.error("Audio must be under 10 MB");
+    if (blob.size > MAX) { toast.error("Audio must be under 10 MB"); return; }
     if (audio) URL.revokeObjectURL(audio.url);
     setAudio({ blob, name, url: URL.createObjectURL(blob) });
   }
