@@ -212,6 +212,16 @@ export type Database = {
         Args: { _city: string; _country: string; _name: string }
         Returns: string
       }
+      get_public_session: {
+        Args: { _code: string }
+        Returns: {
+          church_name: string
+          source_language: string
+          status: Database["public"]["Enums"]["session_status"]
+          target_languages: string[]
+          title: string
+        }[]
+      }
       has_church_role: {
         Args: {
           _church_id: string
@@ -231,6 +241,12 @@ export type Database = {
         Args: { _church_id: string; _user_id: string }
         Returns: boolean
       }
+      join_session: {
+        Args: { _code: string; _language: string }
+        Returns: string
+      }
+      leave_session: { Args: { _id: string }; Returns: undefined }
+      listener_heartbeat: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role:
