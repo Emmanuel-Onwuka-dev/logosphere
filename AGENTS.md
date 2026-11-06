@@ -31,3 +31,5 @@ use the editor.
 
 ## Project rules
 - Language list and per-language status live in `src/lib/languages.ts`; status must reflect real engine readiness (never mark a language available without a verified engine).
+- Roles live in `public.user_roles` (optionally scoped by church_id), checked via security-definer `has_role`/`has_church_role`; never store roles on profiles — prevents privilege escalation.
+- App data is read from the browser Supabase client under RLS; signed-in pages live under `src/routes/_authenticated/`.

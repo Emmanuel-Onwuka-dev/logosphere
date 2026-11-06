@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Play, Mic, Sparkles, Headphones, QrCode, Captions, Languages, Settings2, Radio, Users, Building2, Cpu, Sparkle } from "lucide-react";
 import hero from "@/assets/hero-illustration.jpg";
 import { LiveDemo } from "@/components/landing/LiveDemo";
@@ -61,10 +61,10 @@ function Index() {
             <a href="#churches" className="hover:text-foreground">For Churches</a>
           </nav>
           <div className="flex items-center gap-2">
-            <a href="#cta" className="hidden rounded-full border px-4 py-2 text-sm font-medium sm:inline-flex">Sign In</a>
-            <a href="#cta" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            <Link to="/dashboard" className="hidden rounded-full border px-4 py-2 text-sm font-medium sm:inline-flex">Sign In</Link>
+            <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
               <Sparkle className="size-3.5" /> Get Started
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -200,10 +200,10 @@ function Index() {
       <section id="cta" className="px-5 pb-24">
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-primary px-6 py-20 text-center text-primary-foreground">
           <h2 className="mx-auto max-w-3xl font-display text-4xl leading-tight sm:text-6xl">Every Voice. Every Language. Every Congregation.</h2>
-          <a href="#cta" className={cn(btn, "mt-10 bg-primary-foreground text-primary hover:opacity-90")}>
+          <Link to="/dashboard" className={cn(btn, "mt-10 bg-primary-foreground text-primary hover:opacity-90")}>
             Start Your Interpretation Session <ArrowRight className="size-4" />
-          </a>
-          <p className="mt-4 text-sm opacity-60">Church sign-in is coming in the next phase.</p>
+          </Link>
+          <p className="mt-4 text-sm opacity-60">Register your church in minutes.</p>
         </div>
       </section>
 
