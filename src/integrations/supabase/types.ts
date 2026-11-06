@@ -44,6 +44,41 @@ export type Database = {
         }
         Relationships: []
       }
+      listener_connections: {
+        Row: {
+          id: string
+          joined_at: string
+          language: string
+          last_seen_at: string
+          left_at: string | null
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          language: string
+          last_seen_at?: string
+          left_at?: string | null
+          session_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          language?: string
+          last_seen_at?: string
+          left_at?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listener_connections_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           church_id: string | null
@@ -69,6 +104,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          church_id: string
+          created_at: string
+          created_by: string | null
+          ended_at: string | null
+          id: string
+          public_code: string
+          source_language: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          target_languages: string[]
+          title: string
+          total_live_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          public_code?: string
+          source_language?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          target_languages?: string[]
+          title: string
+          total_live_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          public_code?: string
+          source_language?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          target_languages?: string[]
+          title?: string
+          total_live_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_church_id_fkey"
             columns: ["church_id"]
             isOneToOne: false
             referencedRelation: "churches"
@@ -113,6 +204,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_operate_church: {
+        Args: { _church_id: string; _user_id: string }
+        Returns: boolean
+      }
       create_church: {
         Args: { _city: string; _country: string; _name: string }
         Returns: string
@@ -143,6 +238,7 @@ export type Database = {
         | "church_admin"
         | "media_operator"
         | "listener"
+      session_status: "draft" | "live" | "paused" | "ended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -276,6 +372,7 @@ export const Constants = {
         "media_operator",
         "listener",
       ],
+      session_status: ["draft", "live", "paused", "ended"],
     },
   },
 } as const
