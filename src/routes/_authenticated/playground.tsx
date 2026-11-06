@@ -62,7 +62,7 @@ function Lab() {
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
 
-  function useBlob(blob: Blob, name: string) {
+  function takeClip(blob: Blob, name: string) {
     if (blob.size > MAX) return toast.error("Audio must be under 10 MB");
     if (audio) URL.revokeObjectURL(audio.url);
     setAudio({ blob, name, url: URL.createObjectURL(blob) });
@@ -73,7 +73,7 @@ function Lab() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const r = new MediaRecorder(stream); const chunks: Blob[] = [];
       r.ondataavailable = (e) => chunks.push(e.data);
-      r.onstop = () => { stream.getTracks().forEach((t) => t.stop()); setRecording(false); useBlob(new Blob(chunks, { type: r.mimeType }), `mic-${new Date().toLocaleTimeString()}`); };
+      r.onstop = () => { stream.getTracks().forEach((t) => t.stop()); setRecording(false); takeClip(new Blob(chunks, { type: r.mimeType }), `mic-${new Date().toLocaleTimeString()}`); };
       rec.current = r; r.start(); setRecording(true);
     } catch { toast.error("Microphone access was blocked"); }
   }
@@ -113,7 +113,7 @@ function Lab() {
               </button>
               <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm">
                 <Upload className="size-4" /> Upload
-                <input type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) useBlob(f, f.name); e.target.value = ""; }} />
+                <input type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) takeClip(f, f.name); e.target.value = ""; }} />
               </label>
             </div>
             {audio && <div className="mt-3"><p className="truncate text-xs text-muted-foreground">{audio.name} · {(audio.blob.size / 1024).toFixed(0)} KB</p><audio controls src={audio.url} className="mt-1 w-full" /></div>}
