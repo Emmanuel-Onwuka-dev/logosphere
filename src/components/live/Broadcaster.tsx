@@ -21,7 +21,7 @@ export function Broadcaster({ sessionId, live }: { sessionId: string; live: bool
       room.on(RoomEvent.Disconnected, () => setState("off"));
       await room.connect(url, token);
       const track = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
-      await room.localParticipant.publishTrack(track, { name: "source", source: Track.Source.Microphone });
+      await room.localParticipant.publishTrack(track as any, { name: "source", source: Track.Source.Microphone });
       roomRef.current = room; trackRef.current = track; setState("on");
     } catch (e: any) {
       toast.error(e?.name === "NotAllowedError" ? "Microphone permission was denied" : e?.message ?? "Couldn't start live audio");
