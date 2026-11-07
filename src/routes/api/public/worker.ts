@@ -22,8 +22,8 @@ export const Route = createFileRoute("/api/public/worker")({
         const got = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!expected || expected.length < 24 || !safeEq(got, expected)) return json({ error: "Unauthorized" }, 401);
         let body: any; try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const sb = supabaseAdmin as any;
+        const { workerDb } = await import("@/lib/worker-db.server");
+        const sb = workerDb() as any;
 
         if (body.action === "jobs") {
           const { data: sessions, error } = await sb.from("sessions").select("id, public_code, source_language, target_languages, status").in("status", ["live", "paused"]);
