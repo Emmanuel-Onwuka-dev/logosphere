@@ -31,12 +31,13 @@ function SessionPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["session", id],
     queryFn: async () => {
-      const [s, l] = await Promise.all([
+      const [s, l, c] = await Promise.all([
         supabase.from("sessions").select("*").eq("id", id).maybeSingle(),
         supabase.from("listener_connections").select("language, last_seen_at, left_at").eq("session_id", id),
+        (supabase as any).from("channel_status").select("language, status, last_error, latency_ms, updated_at").eq("session_id", id),
       ]);
       if (s.error) throw s.error;
-      return { session: s.data, listeners: l.data ?? [] };
+      return { session: s.data, listeners: l.data ?? [], channels: (c.data ?? []) as { language: string; status: string; last_error: string | null; latency_ms: number | null; updated_at: string }[] };
     },
   });
 
@@ -44,6 +45,7 @@ function SessionPage() {
     const ch = supabase.channel(`session-${id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `id=eq.${id}` }, () => qc.invalidateQueries({ queryKey: ["session", id] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "listener_connections", filter: `session_id=eq.${id}` }, () => qc.invalidateQueries({ queryKey: ["session", id] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "channel_status", filter: `session_id=eq.${id}` }, () => qc.invalidateQueries({ queryKey: ["session", id] }))
       .subscribe();
     const t = setInterval(() => tick((n) => n + 1), 15000);
     return () => { supabase.removeChannel(ch); clearInterval(t); };
@@ -100,12 +102,15 @@ function SessionPage() {
           <ul className="mt-5 divide-y">
             {TARGET_LANGUAGES.filter((l) => l.code !== s.source_language).map((l) => {
               const on = s.target_languages.includes(l.code);
+              const ch = data.channels.find((c) => c.language === l.code && Date.now() - new Date(c.updated_at).getTime() < 90_000);
               const n = active.filter((a) => a.language === l.code).length;
               return (
                 <li key={l.code} className="flex items-center gap-4 py-3.5">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{l.name} <span className="text-muted-foreground">· {l.native}</span></p>
-                    <p className="text-xs text-muted-foreground">Engine: none connected · {STATUS_LABEL[l.status]}</p>
+                    <p className={`text-xs ${ch?.status === "error" ? "text-destructive" : "text-muted-foreground"}`}>
+                      {ch ? `Engine: ${ch.status}${ch.latency_ms != null ? ` · ${ch.latency_ms} ms` : ""}${ch.last_error ? ` · ${ch.last_error}` : ""}` : `Engine: none connected · ${STATUS_LABEL[l.status]}`}
+                    </p>
                   </div>
                   <span className="w-20 text-right text-sm tabular-nums">{n} {n === 1 ? "listener" : "listeners"}</span>
                   <Switch checked={on} disabled={ended} onCheckedChange={(v) => toggleLang(l.code, v)} aria-label={`Enable ${l.name}`} />
@@ -113,7 +118,7 @@ function SessionPage() {
               );
             })}
           </ul>
-          <p className="mt-4 text-xs text-muted-foreground">No interpretation engine is connected yet, so language channels won't carry interpreted audio yet. The preacher's original voice is already sent live.</p>
+          <p className="mt-4 text-xs text-muted-foreground">A channel carries interpreted audio once an interpretation server reports it as running. The preacher's original voice is always sent live.</p>
         </section>
 
         <aside className="rounded-3xl border bg-card p-6 text-center shadow-card">
