@@ -34,3 +34,4 @@ use the editor.
 - Roles live in `public.user_roles` (optionally scoped by church_id), checked via security-definer `has_role`/`has_church_role`; never store roles on profiles — prevents privilege escalation.
 - App data is read from the browser Supabase client under RLS; signed-in pages live under `src/routes/_authenticated/`.
 - AI engine registry (providers, engines, endpoints, assignments, checks) is platform-admin-only via RLS; endpoints store only a secret *name* (ENGINE_* prefix) resolved server-side in `src/lib/engines.functions.ts` — raw keys never live in tables.
+- Live audio rooms via LiveKit; tokens minted server-side in src/lib/livekit.functions.ts (secrets never reach browser); preacher publishes track "source", interpreted channels use "interp-<lang>".

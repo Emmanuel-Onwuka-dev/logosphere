@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Pause, Play, Square, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Broadcaster } from "@/components/live/Broadcaster";
 import { Switch } from "@/components/ui/switch";
 import { TARGET_LANGUAGES, SOURCE_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
 import { STATUS_TEXT, publicLink, isActiveListener, sessionSeconds, fmtDuration, setStatus, type Session } from "@/lib/sessions";
@@ -88,6 +89,8 @@ function SessionPage() {
         )}
       </div>
 
+      {!ended && <Broadcaster sessionId={s.id} live={s.status === "live"} />}
+
       <div className="mt-10 grid gap-6 md:grid-cols-[1fr_280px]">
         <section className="rounded-3xl border bg-card p-6 shadow-card">
           <div className="flex items-center justify-between">
@@ -110,7 +113,7 @@ function SessionPage() {
               );
             })}
           </ul>
-          <p className="mt-4 text-xs text-muted-foreground">No interpretation engine is connected yet, so channels won't carry audio until the AI phases are done.</p>
+          <p className="mt-4 text-xs text-muted-foreground">No interpretation engine is connected yet, so language channels won't carry interpreted audio yet. The preacher's original voice is already sent live.</p>
         </section>
 
         <aside className="rounded-3xl border bg-card p-6 text-center shadow-card">
