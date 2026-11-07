@@ -112,6 +112,60 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_status: {
+        Row: {
+          created_at: string
+          engine_id: string | null
+          id: string
+          language: string
+          last_error: string | null
+          latency_ms: number | null
+          session_id: string
+          status: string
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          engine_id?: string | null
+          id?: string
+          language: string
+          last_error?: string | null
+          latency_ms?: number | null
+          session_id: string
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          engine_id?: string | null
+          id?: string
+          language?: string
+          last_error?: string | null
+          latency_ms?: number | null
+          session_id?: string
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_status_engine_id_fkey"
+            columns: ["engine_id"]
+            isOneToOne: false
+            referencedRelation: "ai_engines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_status_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churches: {
         Row: {
           city: string | null
