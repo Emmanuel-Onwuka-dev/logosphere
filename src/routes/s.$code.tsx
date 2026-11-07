@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Radio, Headphones, ArrowLeft, Loader2, WifiOff } from "lucide-react";
+import { useListen } from "@/components/live/useListen";
 import { supabase } from "@/integrations/supabase/client";
 import { TARGET_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
 
@@ -115,9 +116,13 @@ function Player({ code, s, lang, online, onBack }: { code: string; s: PublicSess
     };
   }, [code, lang]);
 
-  // No interpretation engine is connected yet, so there is no audio stream to play.
+  // Interpreted channels publish as "interp-<lang>"; until an engine exists, listeners can hear the original voice.
+  const [original, setOriginal] = useState(false);
+  const audio = useListen(code, original ? "source" : `interp-${lang}`, online && conn === "joined");
   const state = !online ? "Reconnecting…" : conn === "joining" ? "Connecting…" : conn === "error" ? "Couldn't connect" :
-    s.status === "draft" ? "Waiting for the service to start" : s.status === "paused" ? "Interpretation paused" : "Waiting for interpreted audio";
+    s.status === "draft" ? "Waiting for the service to start" : s.status === "paused" ? "Interpretation paused" :
+    audio.state === "playing" ? (original ? "Playing original audio" : "Playing live") : audio.state === "blocked" ? "Tap to start audio" :
+    audio.state === "error" ? "Live audio unavailable" : original ? "Waiting for the preacher's microphone" : "Waiting for interpreted audio";
 
   return (
     <div className="pt-2">
@@ -133,7 +138,9 @@ function Player({ code, s, lang, online, onBack }: { code: string; s: PublicSess
           ))}
         </div>
         <p className="mt-6 font-medium">{state}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Live audio isn't connected yet — the interpretation engine is still being set up. Keep this page open.</p>
+        {audio.state === "blocked" && <button onClick={audio.resume} className="mt-4 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start listening</button>}
+        <p className="mt-2 text-xs text-muted-foreground">Interpretation into {l.name} isn't connected yet. Keep this page open.</p>
+        <button onClick={() => setOriginal((o) => !o)} className="mt-4 rounded-full border px-4 py-2 text-xs">{original ? `Back to ${l.name} channel` : "Listen to the original voice instead"}</button>
       </div>
     </div>
   );
