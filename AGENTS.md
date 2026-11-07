@@ -35,3 +35,4 @@ use the editor.
 - App data is read from the browser Supabase client under RLS; signed-in pages live under `src/routes/_authenticated/`.
 - AI engine registry (providers, engines, endpoints, assignments, checks) is platform-admin-only via RLS; endpoints store only a secret *name* (ENGINE_* prefix) resolved server-side in `src/lib/engines.functions.ts` — raw keys never live in tables.
 - Live audio rooms via LiveKit; tokens minted server-side in src/lib/livekit.functions.ts (secrets never reach browser); preacher publishes track "source", interpreted channels use "interp-<lang>".
+- GPU interpretation workers integrate only via `/api/public/worker` (bearer WORKER_TOKEN, contract in docs/worker-api.md); model/provider logic lives in workers, keeping the app engine-agnostic.
