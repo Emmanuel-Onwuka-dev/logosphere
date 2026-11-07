@@ -17,6 +17,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPlaygroundRouteImport } from './routes/_authenticated/playground'
 import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated/sessions.$id'
+import { Route as ApiPublicWorkerRouteImport } from './routes/api/public/worker'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +58,11 @@ const AuthenticatedSessionsIdRoute = AuthenticatedSessionsIdRouteImport.update({
   path: '/sessions/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicWorkerRoute = ApiPublicWorkerRouteImport.update({
+  id: '/api/public/worker',
+  path: '/api/public/worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/playground': typeof AuthenticatedPlaygroundRoute
   '/s/$code': typeof SCodeRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRoute
+  '/api/public/worker': typeof ApiPublicWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/playground': typeof AuthenticatedPlaygroundRoute
   '/s/$code': typeof SCodeRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRoute
+  '/api/public/worker': typeof ApiPublicWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/_authenticated/playground': typeof AuthenticatedPlaygroundRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/sessions/$id': typeof AuthenticatedSessionsIdRoute
+  '/api/public/worker': typeof ApiPublicWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/playground'
     | '/s/$code'
     | '/sessions/$id'
+    | '/api/public/worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/playground'
     | '/s/$code'
     | '/sessions/$id'
+    | '/api/public/worker'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/playground'
     | '/s/$code'
     | '/_authenticated/sessions/$id'
+    | '/api/public/worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -123,6 +135,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   SCodeRoute: typeof SCodeRoute
+  ApiPublicWorkerRoute: typeof ApiPublicWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -183,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/worker': {
+      id: '/api/public/worker'
+      path: '/api/public/worker'
+      fullPath: '/api/public/worker'
+      preLoaderRoute: typeof ApiPublicWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -208,6 +228,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   SCodeRoute: SCodeRoute,
+  ApiPublicWorkerRoute: ApiPublicWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
