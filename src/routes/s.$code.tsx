@@ -64,6 +64,11 @@ function JoinPage() {
   );
 }
 
+/** Supabase RPC calls are lazy: they only send once awaited/then'd. */
+function rpc(name: string, args: Record<string, unknown>) {
+  (supabase.rpc as any)(name, args).then(() => {}, () => {});
+}
+
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="grid min-h-[60vh] place-items-center text-center"><div>{children}</div></div>;
 }
@@ -104,15 +109,17 @@ function Player({ code, s, lang, online, onBack }: { code: string; s: PublicSess
   useEffect(() => {
     let alive = true;
     (supabase.rpc as any)("join_session", { _code: code, _language: lang }).then(({ data, error }: any) => {
-      if (!alive) { if (data) (supabase.rpc as any)("leave_session", { _id: data }); return; }
+      if (!alive) { if (data) rpc("leave_session", { _id: data }); return; }
       if (error) { setConn("error"); return; }
       idRef.current = data; setConn("joined");
     });
-    const beat = setInterval(() => { if (idRef.current) (supabase.rpc as any)("listener_heartbeat", { _id: idRef.current }); }, 30000);
+    const bye = () => { if (idRef.current) { rpc("leave_session", { _id: idRef.current }); idRef.current = null; } };
+    window.addEventListener("pagehide", bye);
+    const beat = setInterval(() => { if (idRef.current) rpc("listener_heartbeat", { _id: idRef.current }); }, 30000);
     return () => {
       alive = false; clearInterval(beat);
-      if (idRef.current) (supabase.rpc as any)("leave_session", { _id: idRef.current });
-      idRef.current = null;
+      if (idRef.current) rpc("leave_session", { _id: idRef.current });
+      idRef.current = null; window.removeEventListener("pagehide", bye);
     };
   }, [code, lang]);
 
