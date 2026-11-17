@@ -149,7 +149,9 @@ export async function intronTranscribe(input: {
   const fd = new FormData();
   const name = `clip.${intronExtension(input.mimeType)}`;
   fd.append("audio_file_name", name);
-  fd.append("audio_file_blob", new File([input.audio.slice()], name, { type: input.mimeType || "audio/wav" }));
+  // Intron judges the type by the attached file name, so pass it explicitly (some servers drop a File's own name).
+  const cleanType = (input.mimeType || "audio/wav").split(";")[0]!.trim();
+  fd.append("audio_file_blob", new Blob([input.audio.slice()], { type: cleanType }), name);
   fd.append("use_language_asr_input", input.language);
   const res = await fetchWithTimeout(`${input.base}${STT_PATH}`, {
     method: "POST", headers: { Authorization: `Bearer ${input.key}` }, body: fd,
