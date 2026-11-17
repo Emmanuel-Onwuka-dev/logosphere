@@ -36,3 +36,4 @@ use the editor.
 - AI engine registry (providers, engines, endpoints, assignments, checks) is platform-admin-only via RLS; endpoints store only a secret *name* (ENGINE_* prefix) resolved server-side in `src/lib/engines.functions.ts` — raw keys never live in tables.
 - Live audio rooms via LiveKit; tokens minted server-side in src/lib/livekit.functions.ts (secrets never reach browser); preacher publishes track "source", interpreted channels use "interp-<lang>".
 - GPU interpretation workers integrate only via `/api/public/worker` (bearer WORKER_TOKEN, contract in docs/worker-api.md); model/provider logic lives in workers, keeping the app engine-agnostic.
+- Before publishing (or whenever the user raises publishing), remind him that WORKER_TOKEN is one shared, never-expiring key — anyone given it keeps access forever — and offer per-worker keys, an address allowlist, or an expiry date. He chose to leave it as-is on 2026-11-17, so do not change the code unless he asks.
