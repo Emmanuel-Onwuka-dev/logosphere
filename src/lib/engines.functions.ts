@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron";
+import { INTRON_BASE, isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron";
 import { translateText } from "@/lib/translate";
 
 /** Secrets used by engines must be stored as server secrets named ENGINE_*. */
@@ -14,9 +14,26 @@ export const testEndpoint = createServerFn({ method: "POST" })
     const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "platform_admin" });
     if (!isAdmin) throw new Error("Forbidden");
     const { data: ep, error } = await (sb as any).from("inference_endpoints")
-      .select("id, endpoint_url, healthcheck_url, auth_method, secret_ref, ai_engines(timeout_ms)")
+      .select("id, endpoint_url, healthcheck_url, auth_method, secret_ref, ai_engines(timeout_ms, supported_language_pairs)")
       .eq("id", data.endpointId).single();
     if (error || !ep) throw new Error("Endpoint not found");
+
+    // Intron has no plain "is it up" address — ask it to speak one word instead.
+    if (isIntronEndpoint(ep.endpoint_url)) {
+      const ref: string | null = ep.secret_ref;
+      const secret = ref && ref.startsWith(SECRET_PREFIX) ? process.env[ref] : undefined;
+      const target = String(ep.ai_engines?.supported_language_pairs?.[0] ?? "").split("-").pop() ?? "ha";
+      const t0 = Date.now();
+      const check = secret
+        ? await intronHealthCheck({ base: INTRON_BASE, key: secret, language: target, timeoutMs: ep.ai_engines?.timeout_ms ?? 30000 })
+        : { ok: false, status_code: null, error: `Secret ${ref ?? "(none)"} is not set on the server` };
+      const latency_ms = Date.now() - t0;
+      await (sb as any).from("endpoint_checks").insert({ endpoint_id: ep.id, ok: check.ok, status_code: check.status_code, latency_ms, error: check.error });
+      await (sb as any).from("inference_endpoints").update({
+        status: check.ok ? "healthy" : "unreachable", last_checked_at: new Date().toISOString(), last_latency_ms: latency_ms, last_error: check.error,
+      }).eq("id", ep.id);
+      return { ok: check.ok, status_code: check.status_code, latency_ms, error: check.error };
+    }
     const url: string | null = ep.healthcheck_url || ep.endpoint_url;
     let ok = false, status_code: number | null = null, err: string | null = null;
     const t0 = Date.now();

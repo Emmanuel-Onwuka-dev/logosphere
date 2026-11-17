@@ -55,6 +55,8 @@ See `docs/worker-api.md`. Workers poll `jobs`, request a room `token`, subscribe
 ## 8. AI engine registration
 Control Centre, in this order: Provider → Engine (model, type, languages, streaming) → Inference endpoint (URL, health check URL, auth method, **secret name**) → Assignment (source → target language, mode, priority).
 
+Registered so far: **Intron** (provider) → **Intron Hausa** (engine, cascaded) → **Intron Hausa pipeline** (endpoint `https://infer.voice.intron.io`, bearer, secret name `ENGINE_INTRON_API_KEY`). Intron supplies speech-to-text and a spoken Hausa / Yoruba / Igbo voice; the middle translation step uses the project's built-in model (`src/lib/translate.ts`). Endpoints whose URL contains `intron.io` run that three-step pipeline instead of the generic JSON contract — see `src/lib/intron.ts`.
+
 ## 9. Environment variables (server secrets)
 | Name | Use |
 |---|---|
@@ -67,12 +69,14 @@ Control Centre, in this order: Provider → Engine (model, type, languages, stre
 ## 10. API contracts
 - `POST /api/public/worker` with `Authorization: Bearer WORKER_TOKEN`, actions `jobs`, `token` and `status`. Details are in docs/worker-api.md.
 - Playground and endpoint tests send a JSON POST `{audio_base64, mime_type, source_language, target_language, model_id}`. They expect either an audio body, or JSON with `audio_base64` and/or `text`/`transcript`.
+- Exception: endpoints whose address contains `intron.io`. For those the Playground runs speech-to-text → translation → speech, and their Test button asks Intron to speak one word in the engine's language.
 
 ## 11. How-tos
 - **Add an AI provider:** register it in the Control Centre, add an `ENGINE_<NAME>` secret, create the endpoint with that secret name, then Test.
 - **Add a language:** add an entry to `TARGET_LANGUAGES` in `src/lib/languages.ts` (status must reflect real readiness), then add an engine assignment.
 - **Change a language's engine:** edit or reprioritise its row under Assignments. No rebuild is needed; workers pick it up on their next poll.
 - **Test a new GPU endpoint:** press Test in Control Centre → Inference endpoints, then compare outputs in the Model Playground.
+- **Hear English become Hausa:** open the Model Playground, record or upload a clip under 2 minutes, set From = English and To = Hausa, tick *Intron Hausa pipeline*, press Run. You get the words it heard, the Hausa text and the Hausa audio.
 - **Run locally:** `bun install`, then `bun run dev`. Tests: `bun run test`.
 - **Deploy:** publish from Lovable, then add the published URL to the Supabase redirect URLs.
 
@@ -82,7 +86,8 @@ Control Centre, in this order: Provider → Engine (model, type, languages, stre
 | Public website, auth (email + Google), roles, church isolation | Implemented and tested |
 | Dashboard, sessions, QR codes, listener counts | Implemented and tested |
 | Congregant page, original-voice audio over LiveKit | Implemented and tested on phones |
-| Engine registry, endpoint tests, Model Playground | Implemented; no real engine registered yet |
+| Engine registry, endpoint tests, Model Playground | Implemented; Intron (Hausa) registered and tested |
+| English → Hausa audio in the Playground (Intron speech-to-text, built-in translation, Intron voice) | Implemented and tested end to end — one sentence came back in about 9 seconds |
 | Worker API (jobs/token/status) | Implemented and configured; no worker connected |
 | GPU interpretation worker (SeamlessStreaming; ASR→MT→TTS for ig/yo/ha) | **Pending**: must be built outside the app |
 | Live interpreted audio in any language | **Pending**: needs a worker |
