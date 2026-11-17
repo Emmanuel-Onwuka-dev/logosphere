@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 import { isActiveListener, sessionSeconds, fmtDuration } from "@/lib/sessions";
 import { TARGET_LANGUAGES } from "@/lib/languages";
-import { isIntronEndpoint, intronVoiceFor, splitForTTS, joinWav, runIntronPipeline, TTS_TEXT_LIMIT } from "@/lib/intron";
+import { intronExtension, isIntronEndpoint, intronVoiceFor, splitForTTS, joinWav, runIntronPipeline, TTS_TEXT_LIMIT } from "@/lib/intron";
 
 describe("listener counting", () => {
   it("counts a listener seen 1 minute ago", () => {
@@ -56,6 +56,12 @@ function pcmOf(b: Uint8Array): number[] {
 }
 
 describe("Intron adapter", () => {
+  it("names browser recordings with an extension Intron accepts", () => {
+    expect(intronExtension("audio/webm;codecs=opus")).toBe("webm");
+    expect(intronExtension("audio/mp4")).toBe("m4a");
+    expect(intronExtension("audio/mpeg")).toBe("mp3");
+    expect(intronExtension("audio/ogg; codecs=opus")).toBe("ogg");
+  });
   it("recognises Intron endpoints by address", () => {
     expect(isIntronEndpoint("https://infer.voice.intron.io/file/v1/upload/sync")).toBe(true);
     expect(isIntronEndpoint("https://example.com/speech")).toBe(false);

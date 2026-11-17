@@ -30,6 +30,13 @@ export const INTRON_VOICES: Record<string, { language: string; accent: string }>
   ig: { language: "ig", accent: "igbo" },
 };
 
+/** Intron checks the file name: "audio/webm;codecs=opus" must become ".webm", not ".webmcodecsopus". */
+export function intronExtension(mimeType: string): string {
+  const sub = (mimeType.split(";")[0] ?? "").split("/")[1]?.trim().toLowerCase() ?? "";
+  const map: Record<string, string> = { wav: "wav", "x-wav": "wav", wave: "wav", mpeg: "mp3", mp3: "mp3", ogg: "ogg", webm: "webm", mp4: "m4a", "x-m4a": "m4a", m4a: "m4a", aac: "aac", flac: "flac", aiff: "aiff", "x-aiff": "aiff" };
+  return map[sub] ?? "wav";
+}
+
 export function isIntronEndpoint(url: string | null | undefined): boolean {
   return !!url && url.includes("intron.io");
 }
@@ -140,7 +147,7 @@ export async function intronTranscribe(input: {
   base: string; key: string; audio: Uint8Array; mimeType: string; language: string; timeoutMs: number;
 }): Promise<string> {
   const fd = new FormData();
-  const name = `clip.${(input.mimeType.split("/")[1] ?? "wav").replace(/[^a-z0-9]/gi, "") || "wav"}`;
+  const name = `clip.${intronExtension(input.mimeType)}`;
   fd.append("audio_file_name", name);
   fd.append("audio_file_blob", new File([input.audio.slice()], name, { type: input.mimeType || "audio/wav" }));
   fd.append("use_language_asr_input", input.language);
