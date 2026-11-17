@@ -69,6 +69,14 @@ function rpc(name: string, args: Record<string, unknown>) {
   (supabase.rpc as any)(name, args).then(() => {}, () => {});
 }
 
+const SB_URL = "https://lmswxfnfmyifohcszxph.supabase.co";
+const SB_KEY = "sb_publishable_qmkEyJrYaIElmiPsrrrOhw_n0yo8gjY";
+function leaveNow(id: string) {
+  try {
+    fetch(`${SB_URL}/rest/v1/rpc/leave_session`, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json", apikey: SB_KEY }, body: JSON.stringify({ _id: id }) }).catch(() => {});
+  } catch { rpc("leave_session", { _id: id }); }
+}
+
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="grid min-h-[60vh] place-items-center text-center"><div>{children}</div></div>;
 }
@@ -113,13 +121,16 @@ function Player({ code, s, lang, online, onBack }: { code: string; s: PublicSess
       if (error) { setConn("error"); return; }
       idRef.current = data; setConn("joined");
     });
-    const bye = () => { if (idRef.current) { rpc("leave_session", { _id: idRef.current }); idRef.current = null; } };
+    // Phones often kill the page before a normal request finishes, so send "leave" with keepalive.
+    const bye = () => { if (idRef.current) { leaveNow(idRef.current); idRef.current = null; } };
     window.addEventListener("pagehide", bye);
-    const beat = setInterval(() => { if (idRef.current) rpc("listener_heartbeat", { _id: idRef.current }); }, 30000);
+    const onVis = () => { if (document.visibilityState === "hidden" && idRef.current) rpc("listener_heartbeat", { _id: idRef.current }); };
+    document.addEventListener("visibilitychange", onVis);
+    const beat = setInterval(() => { if (idRef.current) rpc("listener_heartbeat", { _id: idRef.current }); }, 20000);
     return () => {
       alive = false; clearInterval(beat);
       if (idRef.current) rpc("leave_session", { _id: idRef.current });
-      idRef.current = null; window.removeEventListener("pagehide", bye);
+      idRef.current = null; window.removeEventListener("pagehide", bye); document.removeEventListener("visibilitychange", onVis);
     };
   }, [code, lang]);
 

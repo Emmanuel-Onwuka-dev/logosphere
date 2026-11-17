@@ -10,8 +10,8 @@ export function publicLink(code: string) {
   return `${typeof window !== "undefined" ? window.location.origin : ""}/s/${code}`;
 }
 
-/** A listener counts as connected if seen in the last 2 minutes and hasn't left. */
-export const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
+/** A listener counts as connected if seen in the last minute and hasn't left. */
+export const ACTIVE_WINDOW_MS = 60 * 1000;
 export function isActiveListener(l: { left_at: string | null; last_seen_at: string }) {
   return !l.left_at && Date.now() - new Date(l.last_seen_at).getTime() < ACTIVE_WINDOW_MS;
 }

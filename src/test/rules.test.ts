@@ -5,10 +5,10 @@ import { TARGET_LANGUAGES } from "@/lib/languages";
 
 describe("listener counting", () => {
   it("counts a listener seen 1 minute ago", () => {
-    expect(isActiveListener({ left_at: null, last_seen_at: new Date(Date.now() - 60_000).toISOString() })).toBe(true);
+    expect(isActiveListener({ left_at: null, last_seen_at: new Date(Date.now() - 30_000).toISOString() })).toBe(true);
   });
   it("drops a listener not seen for 3 minutes", () => {
-    expect(isActiveListener({ left_at: null, last_seen_at: new Date(Date.now() - 180_000).toISOString() })).toBe(false);
+    expect(isActiveListener({ left_at: null, last_seen_at: new Date(Date.now() - 90_000).toISOString() })).toBe(false);
   });
   it("drops a listener who left", () => {
     expect(isActiveListener({ left_at: new Date().toISOString(), last_seen_at: new Date().toISOString() })).toBe(false);
