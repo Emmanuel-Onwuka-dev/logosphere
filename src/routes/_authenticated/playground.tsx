@@ -140,7 +140,8 @@ function Lab() {
             <Play className="size-4" /> {busy ? "Running…" : "Run test"}
           </button>
           <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">What the engine receives</summary>
-            <p className="mt-2">A POST to the endpoint's API URL with JSON: <code>audio_base64, mime_type, source_language, target_language, model_id</code>. It may reply with audio, or JSON containing <code>audio_base64</code> and/or <code>text</code>.</p></details>
+            <p className="mt-2">A POST to the endpoint's API URL with JSON: <code>audio_base64, mime_type, source_language, target_language, model_id</code>. It may reply with audio, or JSON containing <code>audio_base64</code> and/or <code>text</code>.</p>
+            <p className="mt-2">Endpoints whose address contains <code>intron.io</code> run a three-step pipeline instead: Intron turns the audio into words, the built-in model translates those words, and Intron speaks them in Hausa, Yoruba or Igbo.</p></details>
         </section>
 
         <div className="space-y-6">
@@ -156,6 +157,7 @@ function Lab() {
                   <p className={`mt-3 font-display text-2xl tabular-nums ${r.ok ? "" : "text-destructive"}`}>{r.latency_ms != null ? `${r.latency_ms} ms` : "—"}</p>
                   {r.error && <p className="text-xs text-destructive">{r.error}</p>}
                   {r.audio && <audio controls src={`data:${r.audioMime};base64,${r.audio}`} className="mt-2 w-full" />}
+                  {r.transcript && <p className="mt-2 max-h-24 overflow-auto rounded-xl bg-muted/60 p-2 text-xs text-muted-foreground">Heard: {r.transcript}</p>}
                   {r.output_text && <p className="mt-2 max-h-32 overflow-auto rounded-xl bg-muted p-2 text-sm">{r.output_text}</p>}
                   <div className="mt-3 flex gap-1">{[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => rate(r.runId, n)} aria-label={`Rate ${n}`}><Star className="size-4 text-muted-foreground" /></button>)}</div>
                 </article>

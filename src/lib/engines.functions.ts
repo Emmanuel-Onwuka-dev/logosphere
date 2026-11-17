@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron";
+import { translateText } from "@/lib/translate";
 
 /** Secrets used by engines must be stored as server secrets named ENGINE_*. */
 export const SECRET_PREFIX = "ENGINE_";
@@ -70,17 +72,35 @@ export const runPlayground = createServerFn({ method: "POST" })
     const results = await Promise.all((eps ?? []).map(async (ep: any) => {
       let ok = false, status_code: number | null = null, err: string | null = null;
       let output_kind: string | null = null, output_text: string | null = null, audio: string | null = null, audioMime: string | null = null;
+      let transcript: string | null = null;
+      const intron = isIntronEndpoint(ep.endpoint_url);
       const headers: Record<string, string> = { "content-type": "application/json" };
+      let epSecret: string | null = null;
       if (ep.auth_method !== "none") {
         const ref: string | null = ep.secret_ref;
         const secret = ref && ref.startsWith(SECRET_PREFIX) ? process.env[ref] : undefined;
         if (!secret) err = `Secret ${ref ?? "(none)"} is not set on the server`;
-        else if (ep.auth_method === "bearer") headers["Authorization"] = `Bearer ${secret}`;
-        else headers["x-api-key"] = secret;
+        else {
+          epSecret = secret;
+          if (ep.auth_method === "bearer") headers["Authorization"] = `Bearer ${secret}`;
+          else headers["x-api-key"] = secret;
+        }
       }
       if (!err && !(ep.endpoint_url && /^https?:\/\//.test(ep.endpoint_url))) err = "Endpoint has no valid API URL";
       const t0 = Date.now();
-      if (!err) {
+      if (intron && !err) {
+        try {
+          const out = await runIntronPipeline({
+            audioBase64: data.audioBase64, mimeType: data.mimeType,
+            sourceLanguage: data.sourceLanguage, targetLanguage: data.targetLanguage,
+            secret: epSecret ?? "", timeoutMs: Math.max(ep.ai_engines?.timeout_ms ?? 60000, 60000),
+            translate: translateText,
+          });
+          ok = true; status_code = 200; output_kind = "audio+text";
+          output_text = out.translated; transcript = out.transcript;
+          audio = out.audioBase64; audioMime = out.audioMime;
+        } catch (e) { err = e instanceof Error ? e.message : "Intron pipeline failed"; }
+      } else if (!err) {
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), Math.max(ep.ai_engines?.timeout_ms ?? 30000, 30000));
@@ -110,8 +130,9 @@ export const runPlayground = createServerFn({ method: "POST" })
         source_language: data.sourceLanguage, target_language: data.targetLanguage,
         input_name: data.inputName.slice(0, 200), input_bytes, ok, status_code, latency_ms, output_kind,
         output_text: output_text?.slice(0, 5000) ?? null, error: err,
+        notes: transcript ? `Heard: ${transcript}`.slice(0, 2000) : null,
       }).select("id").single();
-      return { runId: row?.id ?? null, endpointId: ep.id, endpointName: ep.endpoint_name, engineName: ep.ai_engines?.engine_name ?? "", ok, status_code, latency_ms, error: err, output_kind, output_text, audio, audioMime };
+      return { runId: row?.id ?? null, endpointId: ep.id, endpointName: ep.endpoint_name, engineName: ep.ai_engines?.engine_name ?? "", ok, status_code, latency_ms, error: err, output_kind, output_text, audio, audioMime, transcript };
     }));
     return { batch_id, results };
   });
