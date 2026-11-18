@@ -185,6 +185,24 @@ async function pollFileStatus(base: string, key: string, fileId: string, timeout
   throw new Error("Intron took too long to transcribe that audio — try a shorter clip");
 }
 
+type TtsReply = { data?: { audio_path?: string; processing_status?: string; text_id?: string }; message?: string; status?: string };
+
+/** Wait for queued speech to be generated, then return its download link. */
+async function pollTtsStatus(base: string, key: string, textId: string, timeoutMs: number): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const res = await fetchWithTimeout(`${base}/tts/v1/status/${textId}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    }, { timeoutMs: Math.min(15000, Math.max(1000, deadline - Date.now())) });
+    const json = await res.json().catch(() => ({})) as TtsReply;
+    const status = json.data?.processing_status ?? "";
+    if (status === "TTS_TEXT_AUDIO_GENERATED" && json.data?.audio_path) return json.data.audio_path;
+    if (/FAIL/i.test(status)) throw new Error("Intron could not generate that speech");
+  }
+  throw new Error("Intron took too long to generate the speech");
+}
+
 /** Step 3: turn text into spoken audio in the target language. */
 export async function intronSynthesize(input: {
   base: string; key: string; text: string; voice: { language: string; accent: string }; gender: "male" | "female"; timeoutMs: number;
@@ -200,9 +218,11 @@ export async function intronSynthesize(input: {
       output_audio_format: "wav",
     }),
   }, { timeoutMs: input.timeoutMs });
-  const json = await res.json().catch(() => ({})) as { data?: { audio_path?: string; processing_status?: string }; message?: string; status?: string };
-  if (!res.ok) throw new Error(json.message || `Intron speech generation failed (HTTP ${res.status})`);
-  const path = json.data?.audio_path;
+  const json = await res.json().catch(() => ({})) as TtsReply;
+  let path = json.data?.audio_path;
+  // Longer text is queued instead of spoken straight away — wait for it.
+  if (!path && json.data?.text_id) path = await pollTtsStatus(input.base, input.key, json.data.text_id, input.timeoutMs);
+  if (!path && !res.ok) throw new Error(json.message || `Intron speech generation failed (HTTP ${res.status})`);
   if (!path) throw new Error("Intron did not return any audio");
   // The audio comes back as a plain download link — sending the key here makes the storage reject it.
   const audio = await fetchWithTimeout(path, {}, { timeoutMs: input.timeoutMs });

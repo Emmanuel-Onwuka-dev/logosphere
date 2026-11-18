@@ -55,7 +55,7 @@ See `docs/worker-api.md`. Workers poll `jobs`, request a room `token`, subscribe
 ## 8. AI engine registration
 Control Centre, in this order: Provider → Engine (model, type, languages, streaming) → Inference endpoint (URL, health check URL, auth method, **secret name**) → Assignment (source → target language, mode, priority).
 
-Registered so far: **Intron** (provider) → **Intron Hausa** (engine, cascaded) → **Intron Hausa pipeline** (endpoint `https://infer.voice.intron.io`, bearer, secret name `ENGINE_INTRON_API_KEY`). Intron supplies speech-to-text and a spoken Hausa / Yoruba / Igbo voice; the middle translation step uses the project's built-in model (`src/lib/translate.ts`). Endpoints whose URL contains `intron.io` run that three-step pipeline instead of the generic JSON contract — see `src/lib/intron.ts`.
+Registered so far: **Intron** (provider) → **Intron Hausa** (engine, cascaded) → **Intron Hausa pipeline** (endpoint `https://infer.voice.intron.io`, bearer, secret name `ENGINE_INTRON_API_KEY`). Intron supplies speech-to-text and a spoken Hausa / Yoruba / Igbo voice; the middle translation step uses the project's built-in model (`src/lib/translate.ts`). Endpoints whose URL contains `intron.io` run that three-step pipeline instead of the generic JSON contract — see `src/lib/intron.server.ts`.
 
 ## 9. Environment variables (server secrets)
 | Name | Use |

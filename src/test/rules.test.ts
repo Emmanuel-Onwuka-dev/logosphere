@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 import { isActiveListener, sessionSeconds, fmtDuration } from "@/lib/sessions";
 import { TARGET_LANGUAGES } from "@/lib/languages";
-import { intronExtension, isIntronEndpoint, intronVoiceFor, splitForTTS, joinWav, runIntronPipeline, TTS_TEXT_LIMIT } from "@/lib/intron";
+import { intronExtension, isIntronEndpoint, intronVoiceFor, splitForTTS, joinWav, runIntronPipeline, TTS_TEXT_LIMIT } from "@/lib/intron.server";
 
 describe("listener counting", () => {
   it("counts a listener seen 1 minute ago", () => {

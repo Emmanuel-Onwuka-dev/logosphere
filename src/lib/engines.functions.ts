@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { INTRON_BASE, isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron";
+import { INTRON_BASE, isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron.server";
 import { translateText } from "@/lib/translate";
 
 /** Secrets used by engines must be stored as server secrets named ENGINE_*. */
