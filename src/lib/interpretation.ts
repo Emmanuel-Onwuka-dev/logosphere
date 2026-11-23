@@ -65,7 +65,10 @@ export function nextLiveCut(samples: Float32Array, rate = PCM_SAMPLE_RATE): { en
 }
 
 /** Cuts near every 8 s at a ≥300 ms pause within ±2 s; else extends to the next pause within 4 s; else forces 8 s. */
-export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
+export type CutRule = { target: number; window: number; extend: number };
+export const CUT_RULE: CutRule = { target: PIECE_SECONDS, window: CUT_WINDOW_SECONDS, extend: EXTEND_SECONDS };
+export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE, rule: CutRule = CUT_RULE): Cut[] {
+  const PIECE_SECONDS = rule.target, CUT_WINDOW_SECONDS = rule.window, EXTEND_SECONDS = rule.extend, MAX_PIECE_SECONDS = rule.target + rule.extend;
   const total = samples.length / rate;
   const long = findPauses(samples, rate);
 
