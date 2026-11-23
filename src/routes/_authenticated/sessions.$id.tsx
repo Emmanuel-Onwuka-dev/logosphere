@@ -92,7 +92,7 @@ function SessionPage() {
         )}
       </div>
 
-      {!ended && <Broadcaster sessionId={s.id} live={s.status === "live"} />}
+      {!ended && <Broadcaster sessionId={s.id} live={s.status === "live"} targetLanguages={s.target_languages} />}
 
       <div className="mt-10 grid gap-6 md:grid-cols-[1fr_280px]">
         <section className="rounded-3xl border bg-card p-6 shadow-card">

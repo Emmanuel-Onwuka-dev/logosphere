@@ -4,14 +4,20 @@ import { useServerFn } from "@tanstack/react-start";
 import { Mic, MicOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getBroadcastToken } from "@/lib/livekit.functions";
+import { LIVE_LANGS, useLiveInterpreter, type LiveLang } from "@/components/live/useLiveInterpreter";
+
+const LANG_NAME: Record<LiveLang, string> = { fr: "French", es: "Spanish" };
 
 /** Publishes the preacher's microphone to the session's live audio room. */
-export function Broadcaster({ sessionId, live }: { sessionId: string; live: boolean }) {
+export function Broadcaster({ sessionId, live, targetLanguages }: { sessionId: string; live: boolean; targetLanguages: string[] }) {
   const getToken = useServerFn(getBroadcastToken);
   const [state, setState] = useState<"off" | "connecting" | "on">("off");
   const [level, setLevel] = useState(0);
   const roomRef = useRef<Room | null>(null);
   const trackRef = useRef<LocalAudioTrack | null>(null);
+  const [conn, setConn] = useState<{ room: Room; mic: MediaStreamTrack } | null>(null);
+  const languages = LIVE_LANGS.filter((l) => targetLanguages.includes(l));
+  const channels = useLiveInterpreter({ room: conn?.room ?? null, mic: conn?.mic ?? null, sessionId, languages, live });
 
   async function start() {
     setState("connecting");
@@ -22,13 +28,14 @@ export function Broadcaster({ sessionId, live }: { sessionId: string; live: bool
       await room.connect(url, token);
       const track = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
       await room.localParticipant.publishTrack(track as any, { name: "source", source: Track.Source.Microphone });
-      roomRef.current = room; trackRef.current = track; setState("on");
+      roomRef.current = room; trackRef.current = track; setConn({ room, mic: track.mediaStreamTrack }); setState("on");
     } catch (e: any) {
       toast.error(e?.name === "NotAllowedError" ? "Microphone permission was denied" : e?.message ?? "Couldn't start live audio");
       stop();
     }
   }
   function stop() {
+    setConn(null);
     trackRef.current?.stop(); trackRef.current = null;
     roomRef.current?.disconnect(); roomRef.current = null;
     setState("off"); setLevel(0);
@@ -63,6 +70,19 @@ export function Broadcaster({ sessionId, live }: { sessionId: string; live: bool
               {state === "connecting" ? <Loader2 className="size-4 animate-spin" /> : <Mic className="size-4" />} Connect microphone
             </button>}
       </div>
+      {state === "on" && languages.length > 0 && (
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          {languages.map((l) => { const c = channels[l]; return (
+            <div key={l} className="rounded-2xl border px-4 py-3 text-sm">
+              <p className="font-medium">{LANG_NAME[l]} interpretation</p>
+              <p className={`mt-0.5 text-xs ${c?.lastError ? "text-destructive" : "text-muted-foreground"}`}>
+                {!live ? "Waits until the session is live" : c?.lastError ? c.lastError : c?.delayS != null ? `On air · about ${Math.round(c.delayS)} s behind the preacher` : "Listening for the first piece…"}
+                {c && (c.pieces > 0 || c.failed > 0) ? ` · ${c.pieces} pieces${c.failed ? `, ${c.failed} failed` : ""}` : ""}
+              </p>
+            </div>); })}
+        </div>
+      )}
+      {state === "on" && <p className="mt-3 text-xs text-muted-foreground">Keep this page open: this device interprets the preacher for listeners. Portuguese has no voice yet.</p>}
       <div className="mt-5 h-2 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-live transition-[width] duration-75" style={{ width: `${Math.min(100, level * 140)}%` }} /></div>
     </section>
   );

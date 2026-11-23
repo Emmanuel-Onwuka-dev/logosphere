@@ -100,3 +100,20 @@ describe("dropped connections", () => {
     expect(calls).toBe(1);
   });
 });
+
+describe("live microphone cuts", () => {
+  it("cuts at once when a pause ends just after 8 s", async () => {
+    const { nextLiveCut } = await import("@/lib/interpretation");
+    expect(nextLiveCut(speech(9, [[8.2, 8.6]]), RATE)).toEqual({ endSeconds: 8.4, type: "pause" });
+  });
+  it("keeps listening before 10 s when the only pause is before 8 s", async () => {
+    const { nextLiveCut } = await import("@/lib/interpretation");
+    expect(nextLiveCut(speech(9, [[6.6, 7]]), RATE)).toBeNull();
+    expect(nextLiveCut(speech(10, [[6.6, 7]]), RATE)).toEqual({ endSeconds: 6.8, type: "pause" });
+  });
+  it("forces 8 s at 12 s of unbroken speech", async () => {
+    const { nextLiveCut } = await import("@/lib/interpretation");
+    expect(nextLiveCut(speech(11, []), RATE)).toBeNull();
+    expect(nextLiveCut(speech(12, []), RATE)).toEqual({ endSeconds: 8, type: "forced" });
+  });
+});

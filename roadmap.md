@@ -16,3 +16,6 @@
 # French speed-up and 20-minute test
 - [x] Pitch-preserving speed (French 1.10×, Spanish 1.00×, 1.00–1.20×), new cut rules, one retry, review CSV
 - [x] Run French then Spanish on the 20-minute file (offline, same rules)
+# Live interpretation during a service
+- [x] Preacher's device cuts mic into pause-aware pieces, interprets French/Spanish via server, publishes interp-fr / interp-es in order
+- [ ] Verify on real devices in a live session — sign-in unavailable here

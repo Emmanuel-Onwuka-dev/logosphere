@@ -27,9 +27,8 @@ function frameLevels(samples: Float32Array, rate: number) {
   return levels;
 }
 
-/** Cuts near every 8 s at a ≥300 ms pause within ±2 s; else extends to the next pause within 4 s; else forces 8 s. */
-export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
-  const total = samples.length / rate;
+/** Silent stretches of at least 300 ms, relative to the clip's own loudness. */
+export function findPauses(samples: Float32Array, rate = PCM_SAMPLE_RATE) {
   const levels = frameLevels(samples, rate);
   const sorted = [...levels].sort((a, b) => a - b);
   const floor = sorted[Math.floor(sorted.length * 0.1)] ?? 0;
@@ -42,7 +41,33 @@ export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
     else if (run >= 0) { pauses.push({ start: run * FRAME_SECONDS, end: i * FRAME_SECONDS }); run = -1; }
   });
   if (run >= 0) pauses.push({ start: run * FRAME_SECONDS, end: levels.length * FRAME_SECONDS });
-  const long = pauses.filter((p) => p.end - p.start >= MIN_PAUSE_SECONDS - 1e-9);
+  return pauses.filter((p) => p.end - p.start >= MIN_PAUSE_SECONDS - 1e-9);
+}
+
+/**
+ * Live version of the same cut rule, decided as early as possible on a growing microphone buffer
+ * (seconds since the current piece began). Returns null while it must keep listening.
+ */
+export function nextLiveCut(samples: Float32Array, rate = PCM_SAMPLE_RATE): { endSeconds: number; type: CutType } | null {
+  const total = samples.length / rate;
+  if (total < PIECE_SECONDS - CUT_WINDOW_SECONDS) return null;
+  // Only pauses that have finished (speech resumed) have a settled centre.
+  const centres = findPauses(samples, rate).filter((p) => p.end < total - 1e-6).map((p) => (p.start + p.end) / 2);
+  const near = centres.filter((c) => Math.abs(c - PIECE_SECONDS) <= CUT_WINDOW_SECONDS);
+  const nearest = near.reduce<number | null>((b, c) => (b === null || Math.abs(c - PIECE_SECONDS) < Math.abs(b - PIECE_SECONDS) ? c : b), null);
+  const round = (v: number) => Math.round(v * 100) / 100;
+  if (nearest !== null && (nearest >= PIECE_SECONDS || total >= PIECE_SECONDS + CUT_WINDOW_SECONDS)) return { endSeconds: round(nearest), type: "pause" };
+  if (total < PIECE_SECONDS + CUT_WINDOW_SECONDS) return null;
+  const ext = centres.find((c) => c > PIECE_SECONDS + CUT_WINDOW_SECONDS && c <= PIECE_SECONDS + EXTEND_SECONDS);
+  if (ext !== undefined) return { endSeconds: round(ext), type: "extended" };
+  if (total >= MAX_PIECE_SECONDS) return { endSeconds: PIECE_SECONDS, type: "forced" };
+  return null;
+}
+
+/** Cuts near every 8 s at a ≥300 ms pause within ±2 s; else extends to the next pause within 4 s; else forces 8 s. */
+export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
+  const total = samples.length / rate;
+  const long = findPauses(samples, rate);
 
   const cuts: Cut[] = [];
   let start = 0;
