@@ -5,16 +5,18 @@ export const DEEPGRAM_VOICES: Readonly<Record<string, string>> = {
 };
 export const CLIP_LIMIT_SECONDS = 120;
 export const CONTINUOUS_LIMIT_SECONDS = 180;
+export const LONG_TEST_LIMIT_SECONDS = 21 * 60;
 export const PIECE_SECONDS = 8;
 export const PCM_SAMPLE_RATE = 16000;
 export const DEFAULT_SOURCE = "en";
 export const DEFAULT_TARGET = "fr";
 
-export function validateDuration(seconds: number, mode: "clip" | "piece" | "interpret" | "continuous") {
+export function validateDuration(seconds: number, mode: "clip" | "piece" | "interpret" | "continuous" | "long") {
   if (!Number.isFinite(seconds) || seconds <= 0) throw new Error("The audio is empty or unreadable");
   if (mode === "clip" && seconds >= CLIP_LIMIT_SECONDS) throw new Error("Clips must be under 2 minutes");
   if (mode === "piece" && seconds > PIECE_SECONDS + 1 / PCM_SAMPLE_RATE) throw new Error("A streaming piece must be at most 8 seconds");
-  if (mode === "interpret" && seconds > PIECE_SECONDS + 2 + 1 / PCM_SAMPLE_RATE) throw new Error("An interpreted piece must be at most 10 seconds");
+  if (mode === "interpret" && seconds > PIECE_SECONDS + 4 + 1 / PCM_SAMPLE_RATE) throw new Error("An interpreted piece must be at most 12 seconds");
+  if (mode === "long" && seconds > LONG_TEST_LIMIT_SECONDS) throw new Error("Uploads accept up to 21 minutes");
   if (mode === "continuous" && seconds > CONTINUOUS_LIMIT_SECONDS) throw new Error("Continuous tests accept up to 3 minutes");
 }
 

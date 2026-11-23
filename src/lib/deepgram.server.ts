@@ -1,4 +1,4 @@
-import { PIECE_TIMEOUT_MS } from "@/lib/interpretation";
+import { PIECE_TIMEOUT_MS, withOneRetry } from "@/lib/interpretation";
 import { translateText } from "@/lib/translate";
 import { DEEPGRAM_VOICES, PCM_SAMPLE_RATE, toBase64, splitSpeechText, joinSpeechWav } from "@/lib/deepgram";
 
@@ -110,16 +110,17 @@ export async function deepgramHealth(key: string) {
 }
 export type InterpretResult = {
   transcript: string; translation: string; audioBase64: string | null;
-  hearMs: number | null; translateMs: number | null; speakMs: number | null; error: string | null;
+  hearMs: number | null; translateMs: number | null; speakMs: number | null; error: string | null; retries: string[];
 };
 
-/** Shared by the Playground server function and offline measurements; times out instead of retrying. */
+/** Shared by the Playground server function and offline measurements; one retry on a dropped Deepgram connection, then fails. */
 export async function runInterpretation(pcm: Uint8Array, target: "fr" | "es", key: string): Promise<InterpretResult> {
-  const out: InterpretResult = { transcript: "", translation: "", audioBase64: null, hearMs: null, translateMs: null, speakMs: null, error: null };
+  const out: InterpretResult = { transcript: "", translation: "", audioBase64: null, hearMs: null, translateMs: null, speakMs: null, error: null, retries: [] };
+  const retry = (step: string) => (message: string) => { out.retries.push(`${step}: ${message}`); console.warn(`interpret piece retry (${step}):`, message); };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const work = (async () => {
     let t = performance.now();
-    const heard = await deepgramTranscribe(pcm, key);
+    const heard = await withOneRetry(() => deepgramTranscribe(pcm, key), retry("hear"));
     out.hearMs = Math.round(performance.now() - t); out.transcript = heard.transcript;
     if (!heard.transcript) return; // Silence in, silence out — not a failure.
     t = performance.now();
@@ -127,7 +128,7 @@ export async function runInterpretation(pcm: Uint8Array, target: "fr" | "es", ke
     catch (e) { throw new Error(`Translation error: ${e instanceof Error ? e.message : "failed"}`); }
     out.translateMs = Math.round(performance.now() - t);
     t = performance.now();
-    const spoken = await deepgramSpeak(out.translation, target, key);
+    const spoken = await withOneRetry(() => deepgramSpeak(out.translation, target, key), retry("speak"));
     out.speakMs = Math.round(performance.now() - t); out.audioBase64 = spoken.audioBase64;
   })();
   try {

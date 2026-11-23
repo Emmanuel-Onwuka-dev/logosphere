@@ -48,12 +48,12 @@ export const speakDeepgram = createServerFn({ method: "POST" })
     return await deepgramSpeak(data.text, data.targetLanguage, key);
   });
 /**
- * One numbered piece through hear → translate → speak. Failures come back as values (never retried)
+ * One numbered piece through hear → translate → speak. Failures come back as values (one retry on a dropped connection)
  * so the browser can play silence for that piece and move on without delaying the next ones.
  */
 export const interpretPiece = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ audioBase64: z.string().min(1).max(500_000), targetLanguage: z.enum(["fr", "es"]) }).parse(input))
+  .inputValidator((input) => z.object({ audioBase64: z.string().min(1).max(700_000), targetLanguage: z.enum(["fr", "es"]) }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "platform_admin" });
     if (!admin) throw new Error("Forbidden");

@@ -3,11 +3,18 @@ import { PCM_SAMPLE_RATE, PIECE_SECONDS } from "@/lib/deepgram";
 
 export const MIN_PAUSE_SECONDS = 0.3;
 export const CUT_WINDOW_SECONDS = 2;
-export const MAX_PIECE_SECONDS = PIECE_SECONDS + CUT_WINDOW_SECONDS;
+export const EXTEND_SECONDS = 4;
+export const MAX_PIECE_SECONDS = PIECE_SECONDS + EXTEND_SECONDS;
+export const SPEED_MIN = 1;
+export const SPEED_MAX = 1.2;
+export const DEFAULT_SPEED: Readonly<Record<"fr" | "es", number>> = { fr: 1.1, es: 1 };
+export const clampSpeed = (v: number) => Math.round(Math.min(SPEED_MAX, Math.max(SPEED_MIN, Number.isFinite(v) ? v : 1)) * 100) / 100;
 export const PIECE_TIMEOUT_MS = 30000;
 const FRAME_SECONDS = 0.01;
 
-export type Cut = { index: number; startSeconds: number; endSeconds: number; atPause: boolean };
+/** pause: ≥300 ms pause within ±2 s of 8 s · extended: next pause within 4 s after 8 s · forced: hard cut at 8 s. */
+export type CutType = "pause" | "extended" | "forced";
+export type Cut = { index: number; startSeconds: number; endSeconds: number; type: CutType };
 
 function frameLevels(samples: Float32Array, rate: number) {
   const size = Math.round(rate * FRAME_SECONDS);
@@ -20,7 +27,7 @@ function frameLevels(samples: Float32Array, rate: number) {
   return levels;
 }
 
-/** Cuts near every 8 s at the centre of a ≥300 ms pause within ±2 s, else exactly at the 8 s mark. */
+/** Cuts near every 8 s at a ≥300 ms pause within ±2 s; else extends to the next pause within 4 s; else forces 8 s. */
 export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
   const total = samples.length / rate;
   const levels = frameLevels(samples, rate);
@@ -42,15 +49,18 @@ export function findCuts(samples: Float32Array, rate = PCM_SAMPLE_RATE): Cut[] {
   while (total - start > MAX_PIECE_SECONDS) {
     const target = start + PIECE_SECONDS;
     let best: number | null = null;
+    let extended: number | null = null;
     for (const p of long) {
       const centre = (p.start + p.end) / 2;
       if (Math.abs(centre - target) <= CUT_WINDOW_SECONDS && (best === null || Math.abs(centre - target) < Math.abs(best - target))) best = centre;
+      if (centre > target + CUT_WINDOW_SECONDS && centre <= target + EXTEND_SECONDS && (extended === null || centre < extended)) extended = centre;
     }
-    const end = Math.round((best ?? target) * 100) / 100;
-    cuts.push({ index: cuts.length, startSeconds: start, endSeconds: end, atPause: best !== null });
+    const type: CutType = best !== null ? "pause" : extended !== null ? "extended" : "forced";
+    const end = Math.round((best ?? extended ?? target) * 100) / 100;
+    cuts.push({ index: cuts.length, startSeconds: start, endSeconds: end, type });
     start = end;
   }
-  if (total - start > 0) cuts.push({ index: cuts.length, startSeconds: start, endSeconds: Math.round(total * 100) / 100, atPause: false });
+  if (total - start > 0) cuts.push({ index: cuts.length, startSeconds: start, endSeconds: Math.round(total * 100) / 100, type: "pause" });
   return cuts;
 }
 
@@ -87,4 +97,40 @@ export function wavSeconds(wav: Uint8Array) {
   const v = new DataView(wav.buffer, wav.byteOffset, wav.byteLength);
   // Streamed WAVs may carry a placeholder data size, so measure the actual bytes.
   return (wav.length - 44) / (v.getUint32(24, true) * v.getUint16(22, true) * (v.getUint16(34, true) / 8));
+}
+
+/** Average/min/max per stretch: first 3 minutes, the middle, and the last 3 minutes of speech. */
+export function sectionStats(rows: { speechStartSeconds: number; delayMs: number }[], totalSeconds: number) {
+  const edge = Math.min(180, totalSeconds / 3);
+  const pick = (f: (t: number) => boolean) => delayStats(rows.filter((r) => f(r.speechStartSeconds)).map((r) => r.delayMs));
+  return {
+    first: pick((t) => t < edge),
+    middle: pick((t) => t >= edge && t < totalSeconds - edge),
+    last: pick((t) => t >= totalSeconds - edge),
+  };
+}
+
+/** Linear extrapolation of the start→end change to one hour of speech. */
+export const growthPerHourMs = (changeMs: number, totalSeconds: number) => (totalSeconds > 0 ? Math.round((changeMs / totalSeconds) * 3600) : 0);
+export const lengthPercent = (audioSeconds: number, speechSeconds: number) => (speechSeconds > 0 ? Math.round((audioSeconds / speechSeconds) * 1000) / 10 : 0);
+
+export type ReviewRow = { language: string; piece: number; cutType: CutType; english: string; translation: string; mark: "" | "acceptable" | "not acceptable" };
+const csvCell = (v: string | number) => { const s = String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+export function reviewCsv(rows: ReviewRow[]) {
+  const head = ["language", "piece", "cut_type", "english", "translation", "review"];
+  return [head, ...rows.map((r) => [r.language, r.piece, r.cutType, r.english, r.translation, r.mark])].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+}
+
+/** A dropped provider connection (not a rejection or timeout). */
+export const isDroppedConnection = (message: string) => /ECONNRESET|socket connection was closed|connection failed|closed before finalising|fetch failed|network/i.test(message);
+
+/** Runs `fn`; on a dropped connection tries exactly once more, reporting the retry. */
+export async function withOneRetry<T>(fn: () => Promise<T>, onRetry: (message: string) => void): Promise<T> {
+  try { return await fn(); }
+  catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (!isDroppedConnection(message)) throw e;
+    onRetry(message);
+    return await fn();
+  }
 }

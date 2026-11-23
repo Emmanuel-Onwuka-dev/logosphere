@@ -59,11 +59,11 @@ export function DeepgramLab() {
 
   async function takeClip(blob: Blob, name: string) {
     if (!mounted.current) return;
-    if (blob.size > 30 * 1024 * 1024) { toast.error("Upload a WAV or MP3 under 30 MB"); return; }
+    if (blob.size > 60 * 1024 * 1024) { toast.error("Upload a WAV or MP3 under 60 MB"); return; }
     setPreparing(true);
     try {
       const decoded = await decodeAudio(blob);
-      validateDuration(decoded.durationSeconds, "continuous");
+      validateDuration(decoded.durationSeconds, "long");
       if (!mounted.current) return;
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
       const url = URL.createObjectURL(blob); objectUrl.current = url;
@@ -121,6 +121,7 @@ export function DeepgramLab() {
 
   async function streamFile() {
     if (!clip || !player.current) return;
+    try { validateDuration(clip.durationSeconds, "continuous"); } catch (e) { toast.error(e instanceof Error ? e.message : "File is too long"); return; }
     const id = ++runId.current;
     setPieces([]); setStreamComplete(false); setElapsed(0); setError(null); setStreaming(true);
     const audio = player.current;
@@ -205,7 +206,7 @@ export function DeepgramLab() {
           {pieces.length > 0 && <p className="mt-3 text-sm">{streaming ? "Test in progress…" : !streamComplete || trend.verdict === "incomplete" ? "Delay trend: inconclusive — a complete three-minute recording with all pieces successful is required." : trend.verdict === "growing" ? `Delay grows · estimated drift +${ms(trend.growthMs)} over this recording.` : `No growing delay detected · estimated drift ${ms(trend.growthMs)} over this recording.`}</p>}
           {pieces.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Text-on-page delay starts at each piece’s first spoken sample and includes playback pacing, queuing and return to this page. This measures English transcription, not translated audio. Each piece opens a separate Nova-3 stream.</p>}
         </section>
-        {clip && (target === "fr" || target === "es") && <AudibleDelayTest samples={clip.samples} url={clip.url} target={target} disabled={busy || streaming || recording || preparing} />}
+        {clip && <AudibleDelayTest samples={clip.samples} url={clip.url} disabled={busy || streaming || recording || preparing} />}
       </div>
     </div>
   );

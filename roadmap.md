@@ -13,3 +13,6 @@
 - [x] Audible delay test mode with per-piece table, stats and downloadable translated audio
 - [x] Run French and Spanish on the user's three-minute clip (offline run of the same rules)
 - [ ] Verify the test inside the signed-in Playground — sign-in unavailable here
+# French speed-up and 20-minute test
+- [x] Pitch-preserving speed (French 1.10×, Spanish 1.00×, 1.00–1.20×), new cut rules, one retry, review CSV
+- [ ] Run French then Spanish on the user's 20-minute file (clip-2.mp3)
