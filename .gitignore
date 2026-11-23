@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local secrets (.env is tracked by Lovable and holds public values only)
+.env.local
+.env.*.local
