@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const calls = vi.hoisted(() => ({ transcribe: vi.fn(), translate: vi.fn(), speak: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-vi.mock("@/lib/deepgram.functions", () => ({ transcribeDeepgram: calls.transcribe, translateDeepgramText: calls.translate, speakDeepgram: calls.speak }));
+vi.mock("@/lib/deepgram.functions", () => ({ transcribeDeepgram: calls.transcribe, translateDeepgramText: calls.translate, speakDeepgram: calls.speak, interpretPiece: vi.fn() }));
 vi.mock("@/lib/audio.browser", () => ({ decodeAudio: async () => ({ samples: new Float32Array(16000), durationSeconds: 1 }) }));
 import { DeepgramLab } from "@/components/playground/DeepgramLab";
 

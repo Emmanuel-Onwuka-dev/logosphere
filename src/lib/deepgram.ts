@@ -10,10 +10,11 @@ export const PCM_SAMPLE_RATE = 16000;
 export const DEFAULT_SOURCE = "en";
 export const DEFAULT_TARGET = "fr";
 
-export function validateDuration(seconds: number, mode: "clip" | "piece" | "continuous") {
+export function validateDuration(seconds: number, mode: "clip" | "piece" | "interpret" | "continuous") {
   if (!Number.isFinite(seconds) || seconds <= 0) throw new Error("The audio is empty or unreadable");
   if (mode === "clip" && seconds >= CLIP_LIMIT_SECONDS) throw new Error("Clips must be under 2 minutes");
   if (mode === "piece" && seconds > PIECE_SECONDS + 1 / PCM_SAMPLE_RATE) throw new Error("A streaming piece must be at most 8 seconds");
+  if (mode === "interpret" && seconds > PIECE_SECONDS + 2 + 1 / PCM_SAMPLE_RATE) throw new Error("An interpreted piece must be at most 10 seconds");
   if (mode === "continuous" && seconds > CONTINUOUS_LIMIT_SECONDS) throw new Error("Continuous tests accept up to 3 minutes");
 }
 

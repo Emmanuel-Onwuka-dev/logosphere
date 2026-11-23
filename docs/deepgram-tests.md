@@ -35,3 +35,7 @@ Tests cover language scope, PCM limits, voice coverage, timing events, silence-s
 All 40 tests passed. Browser module inspection confirmed the Deepgram key was absent, no Deepgram requests were issued, and no server implementation module was downloaded. A separate layout-only browser harness displayed the test form and decoded a synthetic WAV on 390×844 and 1280×1800 screens, with no horizontal page overflow. This does not replace a real signed-in test.
 
 Worker API, listener page and public-route source files are unchanged. Shared catalog status labels reflect the requested pause. Existing session records are retained; new session defaults use only active targets. Pre-existing security warnings (function execution grants and disabled leaked-password protection) were not introduced or changed by this registration migration.
+## Audible delay (2026-11-23, user's 3-minute sermon, offline run of the Playground rules)
+- French: average 31.3 s, min 15.3 s, max 42.7 s, change start→end +23.6 s (grows: French audio ran ~197 s for 180 s of English).
+- Spanish: average 18.6 s, min 14.5 s, max 22.8 s, change +4.1 s.
+- 23 pieces; 18 cut at pauses, 5 at the 8 s fallback; one real word split ("gold", 126.17 s, fallback cut).

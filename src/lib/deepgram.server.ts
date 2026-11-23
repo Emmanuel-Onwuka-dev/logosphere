@@ -1,3 +1,5 @@
+import { PIECE_TIMEOUT_MS } from "@/lib/interpretation";
+import { translateText } from "@/lib/translate";
 import { DEEPGRAM_VOICES, PCM_SAMPLE_RATE, toBase64, splitSpeechText, joinSpeechWav } from "@/lib/deepgram";
 
 export async function deepgramTranscribe(pcm: Uint8Array, key: string) {
@@ -105,4 +107,34 @@ export async function deepgramSpeak(text: string, language: string, key: string)
 export async function deepgramHealth(key: string) {
   const response = await fetch("https://api.deepgram.com/v1/projects", { headers: { Authorization: `Token ${key}` }, signal: AbortSignal.timeout(10000), redirect: "manual" });
   return { ok: response.ok, status_code: response.status, error: response.ok ? null : `Deepgram account check failed (HTTP ${response.status})` };
+}
+export type InterpretResult = {
+  transcript: string; translation: string; audioBase64: string | null;
+  hearMs: number | null; translateMs: number | null; speakMs: number | null; error: string | null;
+};
+
+/** Shared by the Playground server function and offline measurements; times out instead of retrying. */
+export async function runInterpretation(pcm: Uint8Array, target: "fr" | "es", key: string): Promise<InterpretResult> {
+  const out: InterpretResult = { transcript: "", translation: "", audioBase64: null, hearMs: null, translateMs: null, speakMs: null, error: null };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = (async () => {
+    let t = performance.now();
+    const heard = await deepgramTranscribe(pcm, key);
+    out.hearMs = Math.round(performance.now() - t); out.transcript = heard.transcript;
+    if (!heard.transcript) return; // Silence in, silence out — not a failure.
+    t = performance.now();
+    try { out.translation = await translateText(heard.transcript, "en", target); }
+    catch (e) { throw new Error(`Translation error: ${e instanceof Error ? e.message : "failed"}`); }
+    out.translateMs = Math.round(performance.now() - t);
+    t = performance.now();
+    const spoken = await deepgramSpeak(out.translation, target, key);
+    out.speakMs = Math.round(performance.now() - t); out.audioBase64 = spoken.audioBase64;
+  })();
+  try {
+    await Promise.race([work, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Timed out after ${PIECE_TIMEOUT_MS / 1000} s`)), PIECE_TIMEOUT_MS); })]);
+  } catch (e) {
+    out.error = e instanceof Error ? e.message : "Interpretation failed"; out.audioBase64 = null;
+    console.error("interpret piece failed:", out.error);
+  } finally { clearTimeout(timer); }
+  return out;
 }

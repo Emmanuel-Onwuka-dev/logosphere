@@ -6,3 +6,10 @@
 - [x] Verify rules, provider samples, server boundary and phone/desktop layout; report timings only from real supplied audio.
 - [ ] Verify a real signed-in Playground run — external unmanaged Supabase session is unavailable here.
 - [x] Measure the user's short and three-minute recordings (2026-11-23: delay steady at 3–13 s, no growth)
+# Audible delay (French, then Spanish)
+- [x] Ordered playback of numbered translated pieces; wait for late pieces, no overlap
+- [x] Failed piece → silence of the piece length, logged, "piece X failed" note, no retry
+- [x] Cut at ≥300 ms pauses within ±2 s of 8 s, else 8 s; cut points shown
+- [x] Audible delay test mode with per-piece table, stats and downloadable translated audio
+- [x] Run French and Spanish on the user's three-minute clip (offline run of the same rules)
+- [ ] Verify the test inside the signed-in Playground — sign-in unavailable here

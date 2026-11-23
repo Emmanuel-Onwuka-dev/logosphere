@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { deepgramSpeak, deepgramTranscribe } from "@/lib/deepgram.server";
+import { deepgramSpeak, deepgramTranscribe, runInterpretation } from "@/lib/deepgram.server";
 import { readPcmWav, validateDuration } from "@/lib/deepgram";
 import { translateText } from "@/lib/translate";
 
@@ -46,4 +46,23 @@ export const speakDeepgram = createServerFn({ method: "POST" })
     const key = process.env["DEEPGRAM_API_KEY"];
     if (!key) throw new Error("Deepgram's server key has not been configured");
     return await deepgramSpeak(data.text, data.targetLanguage, key);
+  });
+/**
+ * One numbered piece through hear → translate → speak. Failures come back as values (never retried)
+ * so the browser can play silence for that piece and move on without delaying the next ones.
+ */
+export const interpretPiece = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ audioBase64: z.string().min(1).max(500_000), targetLanguage: z.enum(["fr", "es"]) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "platform_admin" });
+    if (!admin) throw new Error("Forbidden");
+    const key = process.env["DEEPGRAM_API_KEY"];
+    if (!key) throw new Error("Deepgram's server key has not been configured");
+    let bytes: Uint8Array;
+    try { bytes = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0)); }
+    catch { throw new Error("Invalid audio encoding"); }
+    const { pcm, durationSeconds } = readPcmWav(bytes);
+    validateDuration(durationSeconds, "interpret");
+    return await runInterpretation(pcm, data.targetLanguage, key);
   });

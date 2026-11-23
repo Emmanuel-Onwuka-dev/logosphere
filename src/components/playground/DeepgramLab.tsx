@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { TARGET_LANGUAGES } from "@/lib/languages";
 import { decodeAudio } from "@/lib/audio.browser";
 import { DEFAULT_TARGET, DEEPGRAM_VOICES, PCM_SAMPLE_RATE, PIECE_SECONDS, delayTrend, encodeWav, toBase64, validateDuration, type PieceResult } from "@/lib/deepgram";
+import { AudibleDelayTest } from "@/components/playground/AudibleDelayTest";
 import { transcribeDeepgram, translateDeepgramText, speakDeepgram } from "@/lib/deepgram.functions";
 
 type Clip = { blob: Blob; name: string; url: string; samples: Float32Array; durationSeconds: number };
@@ -204,6 +205,7 @@ export function DeepgramLab() {
           {pieces.length > 0 && <p className="mt-3 text-sm">{streaming ? "Test in progress…" : !streamComplete || trend.verdict === "incomplete" ? "Delay trend: inconclusive — a complete three-minute recording with all pieces successful is required." : trend.verdict === "growing" ? `Delay grows · estimated drift +${ms(trend.growthMs)} over this recording.` : `No growing delay detected · estimated drift ${ms(trend.growthMs)} over this recording.`}</p>}
           {pieces.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Text-on-page delay starts at each piece’s first spoken sample and includes playback pacing, queuing and return to this page. This measures English transcription, not translated audio. Each piece opens a separate Nova-3 stream.</p>}
         </section>
+        {clip && (target === "fr" || target === "es") && <AudibleDelayTest samples={clip.samples} url={clip.url} target={target} disabled={busy || streaming || recording || preparing} />}
       </div>
     </div>
   );
