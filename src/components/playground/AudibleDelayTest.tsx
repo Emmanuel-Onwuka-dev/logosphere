@@ -17,6 +17,30 @@ const NAME: Record<Lang, string> = { fr: "French", es: "Spanish" };
 const BASE_SPEED: Record<Lang, number> = { fr: 1, es: 1 };
 const CUT_LABEL: Record<CutType, string> = { pause: "pause", extended: "extended to pause", forced: "forced 8 s" };
 const sec = (ms: number | null | undefined) => (ms == null ? "—" : `${(ms / 1000).toFixed(2)} s`);
+
+/** Backlog per piece across the file: x = speech time, y = seconds of queue behind speech. Dashed lines mark the 5 s and 2 s thresholds. */
+function BacklogChart({ rows, totalSeconds }: { rows: Row[]; totalSeconds: number }) {
+  const points = rows.filter((r) => r.audioStartMs !== null && !r.error);
+  if (points.length === 0 || totalSeconds <= 0) return null;
+  const W = 640, H = 120, PAD = 18;
+  const yMax = Math.max(6, ...points.map((r) => r.backlogSeconds)) * 1.1;
+  const x = (s: number) => PAD + (s / totalSeconds) * (W - PAD * 2);
+  const y = (b: number) => H - PAD - (b / yMax) * (H - PAD * 2);
+  const line = points.map((r) => `${x(r.startSeconds).toFixed(1)},${y(r.backlogSeconds).toFixed(1)}`).join(" ");
+  return (
+    <figure className="mt-3">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Playback backlog over the sermon" className="w-full max-w-[640px] overflow-visible text-xs">
+        <line x1={PAD} x2={W - PAD} y1={y(5)} y2={y(5)} stroke="currentColor" strokeDasharray="4 3" className="text-destructive/60" />
+        <line x1={PAD} x2={W - PAD} y1={y(2)} y2={y(2)} stroke="currentColor" strokeDasharray="4 3" className="text-muted-foreground/60" />
+        <line x1={PAD} x2={PAD} y1={PAD} y2={H - PAD} stroke="currentColor" className="text-muted-foreground" />
+        <polyline points={line} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-primary" />
+        <text x={PAD} y={PAD - 4} fill="currentColor" className="text-muted-foreground">backlog 0–{yMax.toFixed(0)} s</text>
+        <text x={W - PAD} y={H - 2} textAnchor="end" fill="currentColor" className="text-muted-foreground">{(totalSeconds / 60).toFixed(0)} min</text>
+      </svg>
+      <figcaption className="text-xs text-muted-foreground">Dashed line at 5 s: speed-up starts. At 2 s: speed returns to base.</figcaption>
+    </figure>
+  );
+}
 const MAX_PENDING = 4;
 
 /** Plays the source at 1× and each language's pieces strictly in number order. Auto mode speeds up when the backlog grows. */
@@ -207,6 +231,7 @@ export function AudibleDelayTest({ samples, url, disabled }: { samples: Float32A
                 <p>At {AUTO_FAST_SPEED}×: {fastSeconds.toFixed(1)} s of speech ({((fastSeconds / totalSeconds) * 100).toFixed(1)}%) · speed changes {run.speedChanges.length} · most requests in flight at once {run.maxInFlight}</p>
               </div>
             )}
+            {run.done && <BacklogChart rows={run.rows} totalSeconds={totalSeconds} />}
             <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[920px] text-left text-xs"><caption className="sr-only">{NAME[lang]} audible delay per piece</caption>
               <thead className="text-muted-foreground"><tr className="border-b"><th className="py-2">Piece</th><th>Cut</th><th>Speech starts</th><th>Audio starts</th><th>Delay</th><th>Backlog</th><th>Speed</th><th>Status</th><th className="w-1/3">Translation</th><th>Review</th></tr></thead>
               <tbody className="tabular-nums">{run.rows.map((r) => (
