@@ -2,9 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INTRON_BASE, isIntronEndpoint, intronHealthCheck, runIntronPipeline } from "@/lib/intron.server";
 import { translateText } from "@/lib/translate";
+import { deepgramHealth } from "@/lib/deepgram.server";
+import { isDeepgramEndpoint, isEngineSecretName } from "@/lib/engine-secrets";
 
 /** Secrets used by engines must be stored as server secrets named ENGINE_*. */
-export const SECRET_PREFIX = "ENGINE_";
+export { SECRET_PREFIX } from "@/lib/engine-secrets";
 
 export const testEndpoint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -14,14 +16,24 @@ export const testEndpoint = createServerFn({ method: "POST" })
     const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "platform_admin" });
     if (!isAdmin) throw new Error("Forbidden");
     const { data: ep, error } = await (sb as any).from("inference_endpoints")
-      .select("id, endpoint_url, healthcheck_url, auth_method, secret_ref, ai_engines(timeout_ms, supported_language_pairs)")
+      .select("id, status, endpoint_url, healthcheck_url, auth_method, secret_ref, ai_engines(status, timeout_ms, supported_language_pairs)")
       .eq("id", data.endpointId).single();
     if (error || !ep) throw new Error("Endpoint not found");
+    if (ep.status === "paused" || ep.ai_engines?.status === "paused") throw new Error("This engine is paused");
+    if (isDeepgramEndpoint(ep.endpoint_url)) {
+      const key = process.env["DEEPGRAM_API_KEY"];
+      const started = performance.now();
+      const check = key ? await deepgramHealth(key) : { ok: false, status_code: null, error: "Deepgram's server key has not been configured" };
+      const latency_ms = Math.round(performance.now() - started);
+      await (sb as any).from("endpoint_checks").insert({ endpoint_id: ep.id, ...check, latency_ms });
+      await (sb as any).from("inference_endpoints").update({ status: check.ok ? "healthy" : "unreachable", last_checked_at: new Date().toISOString(), last_latency_ms: latency_ms, last_error: check.error }).eq("id", ep.id);
+      return { ...check, latency_ms };
+    }
 
     // Intron has no plain "is it up" address — ask it to speak one word instead.
     if (isIntronEndpoint(ep.endpoint_url)) {
       const ref: string | null = ep.secret_ref;
-      const secret = ref && ref.startsWith(SECRET_PREFIX) ? process.env[ref] : undefined;
+      const secret = ref && isEngineSecretName(ref) ? process.env[ref] : undefined;
       const target = String(ep.ai_engines?.supported_language_pairs?.[0] ?? "").split("-").pop() ?? "ha";
       const t0 = Date.now();
       const check = secret
@@ -42,7 +54,7 @@ export const testEndpoint = createServerFn({ method: "POST" })
       const headers: Record<string, string> = {};
       if (ep.auth_method !== "none") {
         const ref: string | null = ep.secret_ref;
-        const secret = ref && ref.startsWith(SECRET_PREFIX) ? process.env[ref] : undefined;
+        const secret = ref && isEngineSecretName(ref) ? process.env[ref] : undefined;
         if (!secret) err = `Secret ${ref ?? "(none)"} is not set on the server`;
         else if (ep.auth_method === "bearer") headers["Authorization"] = `Bearer ${secret}`;
         else headers["x-api-key"] = secret;
@@ -81,7 +93,7 @@ export const runPlayground = createServerFn({ method: "POST" })
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "platform_admin" });
     if (!isAdmin) throw new Error("Forbidden");
     const { data: eps, error } = await sb.from("inference_endpoints")
-      .select("id, endpoint_name, endpoint_url, auth_method, secret_ref, engine_id, ai_engines(engine_name, model_id, timeout_ms)")
+      .select("id, status, endpoint_name, endpoint_url, auth_method, secret_ref, engine_id, ai_engines(status, engine_name, model_id, timeout_ms)")
       .in("id", data.endpointIds);
     if (error) throw new Error("Could not load endpoints");
     const batch_id = crypto.randomUUID();
@@ -91,11 +103,13 @@ export const runPlayground = createServerFn({ method: "POST" })
       let output_kind: string | null = null, output_text: string | null = null, audio: string | null = null, audioMime: string | null = null;
       let transcript: string | null = null;
       const intron = isIntronEndpoint(ep.endpoint_url);
+      if (ep.status === "paused" || ep.ai_engines?.status === "paused") err = "This engine is paused";
+      if (isDeepgramEndpoint(ep.endpoint_url)) err = "Use the dedicated Deepgram test";
       const headers: Record<string, string> = { "content-type": "application/json" };
       let epSecret: string | null = null;
       if (ep.auth_method !== "none") {
         const ref: string | null = ep.secret_ref;
-        const secret = ref && ref.startsWith(SECRET_PREFIX) ? process.env[ref] : undefined;
+        const secret = ref && isEngineSecretName(ref) ? process.env[ref] : undefined;
         if (!secret) err = `Secret ${ref ?? "(none)"} is not set on the server`;
         else {
           epSecret = secret;

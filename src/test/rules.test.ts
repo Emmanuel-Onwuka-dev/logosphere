@@ -48,7 +48,7 @@ function pcmOf(b: Uint8Array): number[] {
   const tag = (i: number) => String.fromCharCode(...b.subarray(i, i + 4));
   let i = 12;
   while (i + 8 <= b.length) {
-    const size = b[i + 4]! | (b[i + 5]! << 8) | (b[i + 6]! << 16) | (b[i + 7]! << 24);
+    const size = (b[i + 4] ?? 0) | ((b[i + 5] ?? 0) << 8) | ((b[i + 6] ?? 0) << 16) | ((b[i + 7] ?? 0) << 24);
     if (tag(i) === "data") return [...b.subarray(i + 8, i + 8 + size)];
     i = i + 8 + size + (size % 2);
   }

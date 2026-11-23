@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TARGET_LANGUAGES, SOURCE_LANGUAGES } from "@/lib/languages";
-import { testEndpoint, SECRET_PREFIX } from "@/lib/engines.functions";
+import { TARGET_LANGUAGES, ACTIVE_TARGET_LANGUAGES } from "@/lib/languages";
+import { testEndpoint } from "@/lib/engines.functions";
+import { isEngineSecretName } from "@/lib/engine-secrets";
 
 export const Route = createFileRoute("/_authenticated/control")({
   head: () => ({
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/control")({
 });
 
 const db = supabase as any;
-const ALL_LANGS = SOURCE_LANGUAGES.map((l) => l.code);
+const ALL_LANGS = ["en", ...ACTIVE_TARGET_LANGUAGES.map((l) => l.code)];
 const DEPLOY = ["hosted_api", "self_hosted_gpu", "local_server", "testing_env", "other"];
 const ENGINE_TYPES = ["speech_to_speech", "asr", "text_translation", "tts", "voice_generation", "audio_processing", "pipeline"];
 const nice = (s: string) => s.replace(/_/g, " ");
@@ -77,7 +78,7 @@ function Admin() {
           <TabsContent value="providers"><Manager table="ai_providers" title="Providers" nameKey="name" fields={[
             { k: "name", label: "Provider name" },
             { k: "provider_type", label: "Type", type: "select", options: DEPLOY },
-            { k: "status", label: "Status", type: "select", options: ["testing", "active", "disabled"] },
+            { k: "status", label: "Status", type: "select", options: ["testing", "active", "paused", "disabled"] },
             { k: "notes", label: "Notes" },
           ]} /></TabsContent>
           <TabsContent value="engines"><Manager table="ai_engines" title="Engines & models" nameKey="engine_name" fields={[
@@ -87,11 +88,11 @@ function Admin() {
             { k: "engine_type", label: "Engine type", type: "select", options: ENGINE_TYPES },
             { k: "deployment_type", label: "Deployment", type: "select", options: DEPLOY },
             { k: "supported_languages", label: "Supported languages", type: "list", hint: ALL_LANGS.join(", ") },
-            { k: "supported_language_pairs", label: "Language pairs", type: "list", hint: "e.g. en-fr, en-yo" },
+            { k: "supported_language_pairs", label: "Language pairs", type: "list", hint: "e.g. en-fr, en-es, en-pt" },
             { k: "input_format", label: "Input format", hint: "e.g. pcm16 16kHz" }, { k: "output_format", label: "Output format" },
             { k: "streaming", label: "Streaming", type: "bool" },
             { k: "max_concurrency", label: "Max concurrency", type: "number" }, { k: "timeout_ms", label: "Timeout (ms)", type: "number" },
-            { k: "status", label: "Status", type: "select", options: ["disabled", "testing", "operational"] },
+            { k: "status", label: "Status", type: "select", options: ["disabled", "testing", "operational", "paused"] },
           ]} /></TabsContent>
           <TabsContent value="endpoints"><Manager table="inference_endpoints" title="Inference endpoints" nameKey="endpoint_name" testable fields={[
             { k: "endpoint_name", label: "Endpoint name" },
@@ -99,12 +100,13 @@ function Admin() {
             { k: "endpoint_type", label: "Type", type: "select", options: ["http", "websocket", "grpc"] },
             { k: "endpoint_url", label: "API base URL" }, { k: "websocket_url", label: "WebSocket URL" }, { k: "healthcheck_url", label: "Health-check URL" },
             { k: "auth_method", label: "Authentication", type: "select", options: ["none", "bearer", "api_key"] },
-            { k: "secret_ref", label: "Secret name", hint: `Name of a server secret starting with ${SECRET_PREFIX} — never paste the key here` },
+            { k: "secret_ref", label: "Secret name", hint: "ENGINE_* or DEEPGRAM_API_KEY — secret names only, never the key value" },
+            { k: "status", label: "Status", type: "select", options: ["unknown", "healthy", "unreachable", "paused"] },
           ]} /></TabsContent>
           <TabsContent value="assignments"><Manager table="engine_assignments" title="Engine assignments" nameKey="target_language" fields={[
             { k: "engine_id", label: "Engine", type: "select", options: opts(engines, "engine_name") },
-            { k: "source_language", label: "From", type: "select", options: ALL_LANGS },
-            { k: "target_language", label: "To", type: "select", options: TARGET_LANGUAGES.map((l) => l.code) },
+            { k: "source_language", label: "From", type: "select", options: ["en|English"] },
+            { k: "target_language", label: "To", type: "select", options: TARGET_LANGUAGES.map((l) => `${l.code}|${l.name}${l.status === "paused" ? " — paused" : ""}`) },
             { k: "processing_mode", label: "Processing mode", type: "select", options: ["direct", "cascaded"] },
             { k: "priority", label: "Priority", type: "number" },
             { k: "enabled", label: "Enabled", type: "bool" },
@@ -134,9 +136,9 @@ function Health({ engines }: { engines: any[] }) {
         <h2 className="font-display text-lg">Language channels</h2>
         <ul className="mt-3 grid gap-2 sm:grid-cols-3">
           {TARGET_LANGUAGES.map((l) => {
-            const a = asg.filter((x) => x.target_language === l.code && x.enabled).sort((x, y) => x.priority - y.priority)[0];
+            const a = l.status === "paused" ? undefined : asg.filter((x) => x.target_language === l.code && x.enabled).sort((x, y) => x.priority - y.priority)[0];
             const e = a && engines.find((x) => x.id === a.engine_id);
-            return <li key={l.code} className="rounded-xl border p-3 text-sm"><p className="font-medium">{l.name}</p><p className="text-xs text-muted-foreground">{e ? `${e.engine_name} · ${nice(e.status)}` : "No engine assigned"}</p></li>;
+            return <li key={l.code} className="rounded-xl border p-3 text-sm"><p className="font-medium">{l.name}</p><p className="text-xs text-muted-foreground">{l.status === "paused" ? "Paused" : e ? `${e.engine_name} · ${nice(e.status)}` : "Testing · No engine assigned"}</p></li>;
           })}
         </ul>
       </section>
@@ -189,9 +191,10 @@ function Manager({ table, title, fields, nameKey, testable, engines }: { table: 
               <p className="text-xs text-muted-foreground">
                 {r.status ? nice(r.status) : r.enabled ? "enabled" : "disabled"}
                 {r.last_latency_ms != null && ` · ${r.last_latency_ms} ms`}{r.last_error && ` · ${r.last_error}`}
+                {table === "ai_providers" && r.notes && ` · ${r.notes}`}
               </p>
             </button>
-            {testable && <button onClick={() => runTest(r.id)} className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs"><Activity className="size-3.5" /> Test</button>}
+            {testable && <button disabled={r.status === "paused"} onClick={() => runTest(r.id)} className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs disabled:opacity-50"><Activity className="size-3.5" /> Test</button>}
             <button onClick={() => remove(r.id)} aria-label="Delete" className="text-muted-foreground"><Trash2 className="size-4" /></button>
           </li>
         ))}
@@ -214,7 +217,7 @@ function Editor({ table, fields, initial, onDone }: { table: string; fields: Fie
       const x = v[f.k];
       row[f.k] = f.type === "number" ? (x === "" || x == null ? null : Number(x)) : f.type === "list" ? (Array.isArray(x) ? x : String(x).split(",").map((s) => s.trim()).filter(Boolean)) : x === "" ? null : x;
     }
-    if (row.secret_ref && !row.secret_ref.startsWith(SECRET_PREFIX)) { toast.error(`Secret name must start with ${SECRET_PREFIX}`); return; }
+    if (row.secret_ref && !isEngineSecretName(row.secret_ref)) { toast.error("Use an ENGINE_* secret name or DEEPGRAM_API_KEY, never the key itself"); return; }
     setBusy(true);
     const q = initial.id ? db.from(table).update(row).eq("id", initial.id) : db.from(table).insert(row);
     const { error } = await q;
@@ -228,7 +231,7 @@ function Editor({ table, fields, initial, onDone }: { table: string; fields: Fie
           <Label htmlFor={f.k}>{f.label}</Label>
           {f.type === "select" ? (
             <select id={f.k} value={v[f.k] ?? ""} onChange={(e) => setV({ ...v, [f.k]: e.target.value })} className="h-10 w-full rounded-md border bg-background px-3 text-sm" required>
-              {(f.options ?? []).map((o) => { const [val, lab] = o.split("|"); return <option key={val} value={val}>{nice(lab ?? val ?? "")}</option>; })}
+              {(f.options ?? []).map((o) => { const [val, lab] = o.split("|"); return <option key={val} value={val} disabled={lab?.includes("— paused")}>{nice(lab ?? val ?? "")}</option>; })}
             </select>
           ) : f.type === "bool" ? (
             <div className="pt-2"><Switch id={f.k} checked={!!v[f.k]} onCheckedChange={(c) => setV({ ...v, [f.k]: c })} /></div>

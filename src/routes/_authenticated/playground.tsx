@@ -6,6 +6,11 @@ import { toast } from "sonner";
 import { ArrowLeft, Mic, Square, Upload, Play, ShieldAlert, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DeepgramLab } from "@/components/playground/DeepgramLab";
+import { DEFAULT_SOURCE, DEFAULT_TARGET } from "@/lib/deepgram";
+import { isDeepgramEndpoint } from "@/lib/engine-secrets";
 import { TARGET_LANGUAGES, SOURCE_LANGUAGES } from "@/lib/languages";
 import { runPlayground } from "@/lib/engines.functions";
 
@@ -13,9 +18,9 @@ export const Route = createFileRoute("/_authenticated/playground")({
   head: () => ({
     meta: [
       { title: "Model Playground — Logosphere" },
-      { name: "description", content: "Test interpretation engines with recorded or uploaded audio, compare latency and output." },
+      { name: "description", content: "Test English speech transcription and French, Spanish or Portuguese translation with measured Deepgram timings." },
       { property: "og:title", content: "Model Playground — Logosphere" },
-      { property: "og:description", content: "Compare AI interpretation engines side by side." },
+      { property: "og:description", content: "Measure Deepgram transcription, translation and speech timings in Logosphere." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -47,7 +52,7 @@ function Lab() {
   const run = useServerFn(runPlayground);
   const { data: endpoints = [] } = useQuery({
     queryKey: ["pg-endpoints"],
-    queryFn: async () => (await db.from("inference_endpoints").select("id, endpoint_name, endpoint_url, status, ai_engines(engine_name, model_id)").order("created_at")).data ?? [],
+    queryFn: async () => (await db.from("inference_endpoints").select("id, endpoint_name, endpoint_url, status, ai_engines(engine_name, model_id, status)").order("created_at")).data ?? [],
   });
   const { data: history = [] } = useQuery({
     queryKey: ["pg-runs"],
@@ -56,8 +61,8 @@ function Lab() {
   const [audio, setAudio] = useState<{ blob: Blob; name: string; url: string } | null>(null);
   const [recording, setRecording] = useState(false);
   const rec = useRef<MediaRecorder | null>(null);
-  const [src, setSrc] = useState("en");
-  const [tgt, setTgt] = useState(TARGET_LANGUAGES[0]!.code);
+  const [src, setSrc] = useState<string>(DEFAULT_SOURCE);
+  const [tgt, setTgt] = useState<string>(DEFAULT_TARGET);
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
@@ -103,14 +108,18 @@ function Lab() {
         <h1 className="font-display text-xl">Model Playground</h1>
         <Link to="/control" className="ml-auto text-sm underline">Control Centre</Link>
       </div></header>
-      <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[380px_1fr]">
+      <Tabs defaultValue="deepgram" className="mx-auto max-w-6xl px-5 py-6">
+        <TabsList><TabsTrigger value="deepgram">Deepgram test</TabsTrigger><TabsTrigger value="compare">Compare endpoints</TabsTrigger></TabsList>
+        <TabsContent value="deepgram"><DeepgramLab /></TabsContent>
+        <TabsContent value="compare">
+      <main className="grid gap-6 py-8 lg:grid-cols-[380px_1fr]">
         <section className="space-y-5 rounded-3xl border bg-card p-5 shadow-card">
           <div>
             <h2 className="font-display text-lg">1. Audio</h2>
             <div className="mt-3 flex gap-2">
-              <button onClick={toggleMic} className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm ${recording ? "border-destructive text-destructive" : ""}`}>
+              <Button variant="outline" onClick={toggleMic} className={`flex-1 ${recording ? "border-destructive text-destructive" : ""}`}>
                 {recording ? <><Square className="size-4" /> Stop</> : <><Mic className="size-4" /> Record</>}
-              </button>
+              </Button>
               <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm">
                 <Upload className="size-4" /> Upload
                 <input type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) takeClip(f, f.name); e.target.value = ""; }} />
@@ -122,26 +131,28 @@ function Lab() {
             <div className="space-y-1.5"><Label htmlFor="src">From</Label>
               <select id="src" value={src} onChange={(e) => setSrc(e.target.value)} className={sel}>{SOURCE_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</select></div>
             <div className="space-y-1.5"><Label htmlFor="tgt">To</Label>
-              <select id="tgt" value={tgt} onChange={(e) => setTgt(e.target.value)} className={sel}>{TARGET_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</select></div>
+              <select id="tgt" value={tgt} onChange={(e) => setTgt(e.target.value)} className={sel}>{TARGET_LANGUAGES.map((l) => <option key={l.code} value={l.code} disabled={l.status === "paused"}>{l.name}{l.status === "paused" ? " — paused" : ""}</option>)}</select></div>
           </div>
           <div>
             <h2 className="font-display text-lg">2. Endpoints <span className="text-xs text-muted-foreground">(pick up to 4 to compare)</span></h2>
             {endpoints.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No endpoints yet. Add one in the Control Centre.</p> : (
               <ul className="mt-2 space-y-1.5">{endpoints.map((e: any) => {
                 const on = picked.includes(e.id);
+                const paused = e.status === "paused" || e.ai_engines?.status === "paused";
+                const dedicated = isDeepgramEndpoint(e.endpoint_url);
                 return <li key={e.id}><label className="flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-sm">
-                  <input type="checkbox" checked={on} disabled={!on && picked.length >= 4} onChange={() => setPicked(on ? picked.filter((x) => x !== e.id) : [...picked, e.id])} className="mt-1" />
-                  <span className="min-w-0"><span className="block font-medium">{e.endpoint_name}</span><span className="block truncate text-xs text-muted-foreground">{e.ai_engines?.engine_name}{e.ai_engines?.model_id ? ` · ${e.ai_engines.model_id}` : ""} · {e.status}</span></span>
+                  <input type="checkbox" checked={on} disabled={paused || dedicated || (!on && picked.length >= 4)} onChange={() => setPicked(on ? picked.filter((x) => x !== e.id) : [...picked, e.id])} className="mt-1" />
+                  <span className="min-w-0"><span className="block font-medium">{e.endpoint_name}</span><span className="block truncate text-xs text-muted-foreground">{e.ai_engines?.engine_name}{e.ai_engines?.model_id ? ` · ${e.ai_engines.model_id}` : ""} · {paused ? "Paused" : dedicated ? "Deepgram test tab" : e.status}</span></span>
                 </label></li>;
               })}</ul>
             )}
           </div>
-          <button onClick={go} disabled={busy || !audio || !picked.length} className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
+          <Button onClick={go} disabled={busy || !audio || !picked.length} className="w-full">
             <Play className="size-4" /> {busy ? "Running…" : "Run test"}
-          </button>
+          </Button>
           <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">What the engine receives</summary>
             <p className="mt-2">A POST to the endpoint's API URL with JSON: <code>audio_base64, mime_type, source_language, target_language, model_id</code>. It may reply with audio, or JSON containing <code>audio_base64</code> and/or <code>text</code>.</p>
-            <p className="mt-2">Endpoints whose address contains <code>intron.io</code> run a three-step pipeline instead: Intron turns the audio into words, the built-in model translates those words, and Intron speaks them in Hausa, Yoruba or Igbo.</p></details>
+            <p className="mt-2">Intron is paused. Deepgram has its own test tab.</p></details>
         </section>
 
         <div className="space-y-6">
@@ -159,7 +170,7 @@ function Lab() {
                   {r.audio && <audio controls src={`data:${r.audioMime};base64,${r.audio}`} className="mt-2 w-full" />}
                   {r.transcript && <p className="mt-2 max-h-24 overflow-auto rounded-xl bg-muted/60 p-2 text-xs text-muted-foreground">Heard: {r.transcript}</p>}
                   {r.output_text && <p className="mt-2 max-h-32 overflow-auto rounded-xl bg-muted p-2 text-sm">{r.output_text}</p>}
-                  <div className="mt-3 flex gap-1">{[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => rate(r.runId, n)} aria-label={`Rate ${n}`}><Star className="size-4 text-muted-foreground" /></button>)}</div>
+                  <div className="mt-3 flex gap-1">{[1, 2, 3, 4, 5].map((n) => <Button variant="ghost" size="icon" key={n} onClick={() => rate(r.runId, n)} aria-label={`Rate ${n}`}><Star className="size-4 text-muted-foreground" /></Button>)}</div>
                 </article>
               ))}</div>
             )}
@@ -178,6 +189,8 @@ function Lab() {
           </section>
         </div>
       </main>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

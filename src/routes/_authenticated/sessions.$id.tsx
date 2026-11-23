@@ -64,6 +64,7 @@ function SessionPage() {
     catch (e: any) { toast.error(e.message); }
   }
   async function toggleLang(code: string, on: boolean) {
+    if (on && TARGET_LANGUAGES.some((l) => l.code === code && l.status === "paused")) return;
     const next = on ? [...s!.target_languages, code] : s!.target_languages.filter((c) => c !== code);
     const { error } = await supabase.from("sessions").update({ target_languages: next }).eq("id", s!.id);
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["session", id] });
@@ -109,11 +110,11 @@ function SessionPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{l.name} <span className="text-muted-foreground">· {l.native}</span></p>
                     <p className={`text-xs ${ch?.status === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                      {ch ? `Engine: ${ch.status}${ch.latency_ms != null ? ` · ${ch.latency_ms} ms` : ""}${ch.last_error ? ` · ${ch.last_error}` : ""}` : `Engine: none connected · ${STATUS_LABEL[l.status]}`}
+                      {l.status === "paused" ? "Paused" : ch ? `Engine: ${ch.status}${ch.latency_ms != null ? ` · ${ch.latency_ms} ms` : ""}${ch.last_error ? ` · ${ch.last_error}` : ""}` : `Engine: none connected · ${STATUS_LABEL[l.status]}`}
                     </p>
                   </div>
                   <span className="w-20 text-right text-sm tabular-nums">{n} {n === 1 ? "listener" : "listeners"}</span>
-                  <Switch checked={on} disabled={ended} onCheckedChange={(v) => toggleLang(l.code, v)} aria-label={`Enable ${l.name}`} />
+                  <Switch checked={l.status === "paused" ? false : on} disabled={ended || l.status === "paused"} onCheckedChange={(v) => toggleLang(l.code, v)} aria-label={`Enable ${l.name}`} />
                 </li>
               );
             })}
