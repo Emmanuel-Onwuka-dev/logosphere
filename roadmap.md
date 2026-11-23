@@ -5,4 +5,4 @@
 - [x] Add real-time 8-second continuous-file transcription test with measured delay trend.
 - [x] Verify rules, provider samples, server boundary and phone/desktop layout; report timings only from real supplied audio.
 - [ ] Verify a real signed-in Playground run — external unmanaged Supabase session is unavailable here.
-- [ ] Measure the user's short and three-minute recordings — waiting for the user to upload audio later.
+- [x] Measure the user's short and three-minute recordings (2026-11-23: delay steady at 3–13 s, no growth)
