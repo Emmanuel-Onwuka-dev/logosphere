@@ -9,6 +9,16 @@ export const SPEED_MIN = 1;
 export const SPEED_MAX = 1.2;
 export const DEFAULT_SPEED: Readonly<Record<"fr" | "es", number>> = { fr: 1.1, es: 1 };
 export const clampSpeed = (v: number) => Math.round(Math.min(SPEED_MAX, Math.max(SPEED_MIN, Number.isFinite(v) ? v : 1)) * 100) / 100;
+/** Adaptive playback: speed up while the playback backlog is large, return to base once it has cleared. */
+export const AUTO_FAST_SPEED = 1.15;
+export const BACKLOG_ON_SECONDS = 5;
+export const BACKLOG_OFF_SECONDS = 2;
+export function nextFast(backlogSeconds: number, fast: boolean): boolean {
+  if (backlogSeconds > BACKLOG_ON_SECONDS) return true;
+  if (backlogSeconds < BACKLOG_OFF_SECONDS) return false;
+  return fast;
+}
+export const speedFor = (base: number, fast: boolean) => (fast ? Math.max(base, AUTO_FAST_SPEED) : base);
 export const PIECE_TIMEOUT_MS = 30000;
 const FRAME_SECONDS = 0.01;
 
