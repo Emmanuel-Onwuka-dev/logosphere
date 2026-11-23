@@ -36,10 +36,11 @@ describe("audio test limits", () => {
     expect(() => validateDuration(119.99, "clip")).not.toThrow();
     expect(() => validateDuration(120, "clip")).toThrow();
   });
-  it("accepts a three-minute continuous file", () => {
-    expect(CONTINUOUS_LIMIT_SECONDS).toBe(180);
+  it("accepts a continuous file up to 21 minutes", () => {
+    expect(CONTINUOUS_LIMIT_SECONDS).toBe(21 * 60);
     expect(() => validateDuration(180, "continuous")).not.toThrow();
-    expect(() => validateDuration(181, "continuous")).toThrow();
+    expect(() => validateDuration(21 * 60, "continuous")).not.toThrow();
+    expect(() => validateDuration(21 * 60 + 1, "continuous")).toThrow();
   });
   it("uses eight-second PCM pieces", () => {
     expect(PIECE_SECONDS).toBe(8);

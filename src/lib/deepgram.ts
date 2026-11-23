@@ -4,7 +4,7 @@ export const DEEPGRAM_VOICES: Readonly<Record<string, string>> = {
   en: "aura-2-thalia-en", fr: "aura-2-agathe-fr", es: "aura-2-celeste-es",
 };
 export const CLIP_LIMIT_SECONDS = 120;
-export const CONTINUOUS_LIMIT_SECONDS = 180;
+export const CONTINUOUS_LIMIT_SECONDS = 21 * 60;
 export const LONG_TEST_LIMIT_SECONDS = 21 * 60;
 export const PIECE_SECONDS = 8;
 export const PCM_SAMPLE_RATE = 16000;
@@ -17,7 +17,7 @@ export function validateDuration(seconds: number, mode: "clip" | "piece" | "inte
   if (mode === "piece" && seconds > PIECE_SECONDS + 1 / PCM_SAMPLE_RATE) throw new Error("A streaming piece must be at most 8 seconds");
   if (mode === "interpret" && seconds > PIECE_SECONDS + 4 + 1 / PCM_SAMPLE_RATE) throw new Error("An interpreted piece must be at most 12 seconds");
   if (mode === "long" && seconds > LONG_TEST_LIMIT_SECONDS) throw new Error("Uploads accept up to 21 minutes");
-  if (mode === "continuous" && seconds > CONTINUOUS_LIMIT_SECONDS) throw new Error("Continuous tests accept up to 3 minutes");
+  if (mode === "continuous" && seconds > CONTINUOUS_LIMIT_SECONDS) throw new Error("Continuous tests accept up to 21 minutes");
 }
 
 export function encodeWav(samples: Float32Array): Uint8Array {
