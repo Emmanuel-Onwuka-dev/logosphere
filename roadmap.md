@@ -15,4 +15,4 @@
 - [ ] Verify the test inside the signed-in Playground — sign-in unavailable here
 # French speed-up and 20-minute test
 - [x] Pitch-preserving speed (French 1.10×, Spanish 1.00×, 1.00–1.20×), new cut rules, one retry, review CSV
-- [ ] Run French then Spanish on the user's 20-minute file (clip-2.mp3)
+- [x] Run French then Spanish on the 20-minute file (offline, same rules)
