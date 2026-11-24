@@ -196,6 +196,36 @@ function Index() {
         </div>
       </section>
 
+      {/* Beyond the sermon */}
+      <section id="outreach" className="border-t bg-card">
+        <div className="mx-auto max-w-6xl px-5 py-24">
+          <p className={eyebrow}>Beyond the sermon</p>
+          <h2 className="mt-3 max-w-3xl font-display text-4xl sm:text-5xl">Remove the language barrier from every outreach.</h2>
+          <p className="mt-5 max-w-2xl text-muted-foreground">
+            Logosphere is not only for Sunday services. Take it to evangelism, street outreaches, crusades and community events.
+            The preacher speaks English, and each person hears the message in their own language on their phone.
+          </p>
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            {[
+              ["Sunday services", "Visitors and diaspora members follow the sermon in their own language, live."],
+              ["Outreaches and crusades", "Preach in English on the street or in a field, and reach people who speak other languages."],
+              ["Conferences and community events", "Speakers, panels and gatherings with mixed-language audiences, without interpreter booths."],
+            ].map(([title, body]) => (
+              <div key={title} className="rounded-3xl border bg-background p-6">
+                <p className="font-display text-2xl">{title}</p>
+                <p className="mt-3 text-sm text-muted-foreground">{body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex items-start gap-3 rounded-3xl border border-dashed p-6 text-sm">
+            <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">Coming soon</span>
+            <p className="text-muted-foreground">
+              Two-way listening: when someone answers in their own language, the preacher hears what they said in English.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section id="cta" className="px-5 pb-24">
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-primary px-6 py-20 text-center text-primary-foreground">
