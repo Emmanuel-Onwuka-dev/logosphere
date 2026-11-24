@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "vite build && wrangler deploy --config .output/server/wrangler.json --name logosphere"
+    "deploy": "vite build && wrangler deploy --config .output/server/wrangler.json --name app"
   },
   "overrides": {
     "rolldown": "1.2.1"
