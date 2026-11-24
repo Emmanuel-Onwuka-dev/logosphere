@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Play, Mic, Sparkles, Headphones, QrCode, Captions, Languages, Settings2, Radio, Users, Building2, Cpu, Sparkle } from "lucide-react";
 import hero from "@/assets/hero-illustration.jpg";
 import { LiveDemo } from "@/components/landing/LiveDemo";
-import { TARGET_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
+import { TARGET_LANGUAGES, STATUS_LABEL, isComingSoon } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -140,8 +140,8 @@ function Index() {
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs text-muted-foreground uppercase">{l.region} · {l.code}</span>
                 <span className="flex items-center gap-1.5 text-xs">
-                  <span className={cn("size-1.5 rounded-full", l.status === "under_development" ? "bg-muted-foreground/40" : "bg-warning")} />
-                  {STATUS_LABEL[l.status]}
+                  <span className={cn("size-1.5 rounded-full", isComingSoon(l.code) ? "bg-muted-foreground/40" : "bg-warning")} />
+                  {isComingSoon(l.code) ? "Coming soon" : STATUS_LABEL[l.status]}
                 </span>
               </div>
               <p className="mt-10 font-display text-4xl">{l.native}</p>
@@ -189,7 +189,7 @@ function Index() {
             {TARGET_LANGUAGES.map((l) => (
               <div key={l.code} className="flex items-center justify-between rounded-xl border bg-background px-4 py-3 text-sm">
                 <span>{l.name}</span>
-                <span className="text-xs text-muted-foreground">{STATUS_LABEL[l.status]}</span>
+                <span className="text-xs text-muted-foreground">{isComingSoon(l.code) ? "Coming soon" : STATUS_LABEL[l.status]}</span>
               </div>
             ))}
           </div>

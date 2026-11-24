@@ -7,7 +7,7 @@ import { ArrowLeft, Copy, Pause, Play, Square, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Broadcaster } from "@/components/live/Broadcaster";
 import { Switch } from "@/components/ui/switch";
-import { TARGET_LANGUAGES, SOURCE_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
+import { TARGET_LANGUAGES, SOURCE_LANGUAGES, STATUS_LABEL, isComingSoon } from "@/lib/languages";
 import { STATUS_TEXT, publicLink, isActiveListener, sessionSeconds, fmtDuration, setStatus, type Session } from "@/lib/sessions";
 
 export const Route = createFileRoute("/_authenticated/sessions/$id")({
@@ -64,7 +64,7 @@ function SessionPage() {
     catch (e: any) { toast.error(e.message); }
   }
   async function toggleLang(code: string, on: boolean) {
-    if (on && TARGET_LANGUAGES.some((l) => l.code === code && l.status === "paused")) return;
+    if (on && isComingSoon(code)) return;
     const next = on ? [...s!.target_languages, code] : s!.target_languages.filter((c) => c !== code);
     const { error } = await supabase.from("sessions").update({ target_languages: next }).eq("id", s!.id);
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["session", id] });
@@ -110,11 +110,11 @@ function SessionPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{l.name} <span className="text-muted-foreground">· {l.native}</span></p>
                     <p className={`text-xs ${ch?.status === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                      {l.status === "paused" ? "Paused" : ch ? `Engine: ${ch.status}${ch.latency_ms != null ? ` · ${ch.latency_ms} ms` : ""}${ch.last_error ? ` · ${ch.last_error}` : ""}` : `Engine: none connected · ${STATUS_LABEL[l.status]}`}
+                      {isComingSoon(l.code) ? "Coming soon" : ch ? `Engine: ${ch.status}${ch.latency_ms != null ? ` · ${ch.latency_ms} ms` : ""}${ch.last_error ? ` · ${ch.last_error}` : ""}` : `Engine: none connected · ${STATUS_LABEL[l.status]}`}
                     </p>
                   </div>
                   <span className="w-20 text-right text-sm tabular-nums">{n} {n === 1 ? "listener" : "listeners"}</span>
-                  <Switch checked={l.status === "paused" ? false : on} disabled={ended || l.status === "paused"} onCheckedChange={(v) => toggleLang(l.code, v)} aria-label={`Enable ${l.name}`} />
+                  <Switch checked={isComingSoon(l.code) ? false : on} disabled={ended || isComingSoon(l.code)} onCheckedChange={(v) => toggleLang(l.code, v)} aria-label={`Enable ${l.name}`} />
                 </li>
               );
             })}

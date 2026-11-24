@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SOURCE_LANGUAGES, ACTIVE_TARGET_LANGUAGES } from "@/lib/languages";
+import { SOURCE_LANGUAGES, ACTIVE_TARGET_LANGUAGES, TESTED_LANGUAGE_CODES, isComingSoon } from "@/lib/languages";
 import { STATUS_TEXT, isActiveListener, sessionSeconds, fmtDuration } from "@/lib/sessions";
 
 export function ChurchSessions({ churchId, canOperate, userId }: { churchId: string; canOperate: boolean; userId: string }) {
@@ -76,7 +76,7 @@ function NewSession({ churchId, userId, onCancel }: { churchId: string; userId: 
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [source, setSource] = useState("en");
-  const [targets, setTargets] = useState<string[]>(ACTIVE_TARGET_LANGUAGES.map((l) => l.code));
+  const [targets, setTargets] = useState<string[]>(TESTED_LANGUAGE_CODES.filter((c) => ACTIVE_TARGET_LANGUAGES.some((l) => l.code === c)));
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -105,12 +105,15 @@ function NewSession({ churchId, userId, onCancel }: { churchId: string; userId: 
       <fieldset>
         <legend className="text-sm font-medium">Interpret into</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
-          {ACTIVE_TARGET_LANGUAGES.filter((l) => l.code !== source).map((l) => (
-            <label key={l.code} className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm">
-              <Checkbox checked={targets.includes(l.code)} onCheckedChange={(v) => setTargets(v ? [...targets, l.code] : targets.filter((c) => c !== l.code))} />
-              {l.name}
-            </label>
-          ))}
+          {ACTIVE_TARGET_LANGUAGES.filter((l) => l.code !== source).map((l) => {
+            const soon = isComingSoon(l.code);
+            return (
+              <label key={l.code} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${soon ? "text-muted-foreground" : ""}`}>
+                <Checkbox disabled={soon} checked={!soon && targets.includes(l.code)} onCheckedChange={(v) => setTargets(v ? [...targets, l.code] : targets.filter((c) => c !== l.code))} />
+                {l.name}{soon && <span className="ml-auto font-mono text-[10px] uppercase">Coming soon</span>}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
       <div className="flex gap-2">

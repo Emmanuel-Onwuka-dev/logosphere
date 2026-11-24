@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mic, Headphones, Info } from "lucide-react";
-import { SOURCE_LANGUAGES, TARGET_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
+import { SOURCE_LANGUAGES, TARGET_LANGUAGES, STATUS_LABEL, TESTED_LANGUAGE_CODES, isComingSoon } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 
 function Wave({ active, bars = 28 }: { active: boolean; bars?: number }) {
@@ -19,10 +19,12 @@ function Wave({ active, bars = 28 }: { active: boolean; bars?: number }) {
 
 export function LiveDemo() {
   const [source, setSource] = useState("en");
-  const [selected, setSelected] = useState<string[]>(["fr", "es", "yo"]);
+  const [selected, setSelected] = useState<string[]>([...TESTED_LANGUAGE_CODES]);
   const [micOn, setMicOn] = useState(false);
-  const toggle = (c: string) =>
+  const toggle = (c: string) => {
+    if (isComingSoon(c)) return;
     setSelected((s) => (s.includes(c) ? s.filter((x) => x !== c) : [...s, c]));
+  };
   const targets = TARGET_LANGUAGES.filter((l) => l.code !== source);
 
   return (
@@ -71,18 +73,24 @@ export function LiveDemo() {
           <div>
             <span className="font-mono text-[11px] tracking-widest text-muted-foreground uppercase">Target channels</span>
             <div className="mt-2 flex flex-wrap gap-2">
-              {targets.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => toggle(l.code)}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs transition",
-                    selected.includes(l.code) ? "border-foreground bg-foreground text-background" : "bg-background hover:border-foreground/40",
-                  )}
-                >
-                  {l.name}
-                </button>
-              ))}
+              {targets.map((l) => {
+                const soon = isComingSoon(l.code);
+                return (
+                  <button
+                    key={l.code}
+                    onClick={() => toggle(l.code)}
+                    disabled={soon}
+                    aria-disabled={soon}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs transition",
+                      soon ? "cursor-not-allowed bg-secondary text-muted-foreground" :
+                      selected.includes(l.code) ? "border-foreground bg-foreground text-background" : "bg-background hover:border-foreground/40",
+                    )}
+                  >
+                    {l.name}{soon && <span className="ml-1.5 font-mono text-[10px] uppercase">· Coming soon</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -94,7 +102,7 @@ export function LiveDemo() {
             </p>
           )}
           {targets.filter((l) => selected.includes(l.code)).map((l) => {
-            const processing = micOn && l.status !== "under_development";
+            const processing = micOn && !isComingSoon(l.code);
             return (
               <div key={l.code} className="rounded-2xl border bg-background p-4">
                 <div className="flex items-start justify-between">
@@ -111,7 +119,7 @@ export function LiveDemo() {
                   </span>
                   <span className={cn(
                     "rounded-full px-2 py-0.5 font-medium",
-                    l.status === "under_development" ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground",
+                    isComingSoon(l.code) ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground",
                   )}>
                     {processing ? "Preview signal" : STATUS_LABEL[l.status]}
                   </span>
