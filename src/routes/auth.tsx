@@ -6,12 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Search = { redirect?: string };
+type Search = { redirect?: string; mode?: "in" | "up" };
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): Search => {
     const r = s["redirect"];
-    return typeof r === "string" && r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+    const m = s["mode"];
+    return {
+      ...(typeof r === "string" && r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {}),
+      ...(m === "up" ? { mode: "up" as const } : {}),
+    };
   },
   head: () => ({
     meta: [
@@ -31,9 +35,9 @@ const GoogleG = () => (
 );
 
 function AuthPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, mode: startMode } = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up">(startMode ?? "in");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

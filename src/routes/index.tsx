@@ -61,8 +61,8 @@ function Index() {
             <a href="#churches" className="hover:text-foreground">For Churches</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/dashboard" className="hidden rounded-full border px-4 py-2 text-sm font-medium sm:inline-flex">Sign In</Link>
-            <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            <Link to="/auth" className="hidden rounded-full border px-4 py-2 text-sm font-medium sm:inline-flex">Sign In</Link>
+            <Link to="/auth" search={{ mode: "up" }} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
               <Sparkle className="size-3.5" /> Get Started
             </Link>
           </div>
