@@ -45,7 +45,7 @@ function SermonWorkspace() {
   const archive = useServerFn(setArchived);
   const remove = useServerFn(deleteSermon);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, error } = useQuery({
     queryKey: ["sermon", id],
     queryFn: () => fetchSermon({ data: { recordingId: id } }),
     refetchInterval: (q) => (q.state.data?.recording.transcriptStatus === "transcribing" ? 5000 : false),
@@ -155,6 +155,16 @@ function SermonWorkspace() {
     finally { setBusy(null); }
   }
 
+  if (error) return (
+    <AppShell active="Recorded Sermons">
+      <Link to="/recordings" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="size-4" /> Recorded sermons</Link>
+      <div className="mt-6 rounded-2xl border border-destructive p-6 text-sm">
+        <p className="font-medium text-destructive">This sermon could not be loaded.</p>
+        <p className="mt-2 text-muted-foreground">{error instanceof Error ? error.message : "Unknown error"}</p>
+        <button onClick={() => refetch()} className="mt-4 rounded-full border px-4 py-2">Try again</button>
+      </div>
+    </AppShell>
+  );
   if (isLoading || !data) return <AppShell active="Recorded Sermons"><p className="text-muted-foreground">Loading…</p></AppShell>;
   const r = data.recording;
   const translatedLangs = [...new Set(data.pieces.map((p) => p.language))];
