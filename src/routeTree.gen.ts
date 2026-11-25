@@ -12,9 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedLanguagesRouteImport } from './routes/_authenticated/languages'
+import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
+import { Route as AuthenticatedOrganisationRouteImport } from './routes/_authenticated/organisation'
+import { Route as AuthenticatedOutreachRouteImport } from './routes/_authenticated/outreach'
 import { Route as AuthenticatedPlaygroundRouteImport } from './routes/_authenticated/playground'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedRecordingsRouteImport } from './routes/_authenticated/recordings'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as SCodeRouteImport } from './routes/s.$code'
@@ -35,6 +41,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedControlRoute = AuthenticatedControlRouteImport.update({
   id: '/control',
   path: '/control',
@@ -45,9 +56,35 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLanguagesRoute = AuthenticatedLanguagesRouteImport.update({
+  id: '/languages',
+  path: '/languages',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrganisationRoute =
+  AuthenticatedOrganisationRouteImport.update({
+    id: '/organisation',
+    path: '/organisation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutreachRoute = AuthenticatedOutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlaygroundRoute = AuthenticatedPlaygroundRouteImport.update({
   id: '/playground',
   path: '/playground',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRecordingsRoute = AuthenticatedRecordingsRouteImport.update({
@@ -79,9 +116,15 @@ const ApiPublicWorkerRoute = ApiPublicWorkerRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/activity': typeof AuthenticatedActivityRoute
   '/control': typeof AuthenticatedControlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/languages': typeof AuthenticatedLanguagesRoute
+  '/library': typeof AuthenticatedLibraryRoute
+  '/organisation': typeof AuthenticatedOrganisationRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/playground': typeof AuthenticatedPlaygroundRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/recordings': typeof AuthenticatedRecordingsRoute
   '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
@@ -91,9 +134,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/activity': typeof AuthenticatedActivityRoute
   '/control': typeof AuthenticatedControlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/languages': typeof AuthenticatedLanguagesRoute
+  '/library': typeof AuthenticatedLibraryRoute
+  '/organisation': typeof AuthenticatedOrganisationRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/playground': typeof AuthenticatedPlaygroundRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/recordings': typeof AuthenticatedRecordingsRoute
   '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
@@ -105,9 +154,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/control': typeof AuthenticatedControlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/languages': typeof AuthenticatedLanguagesRoute
+  '/_authenticated/library': typeof AuthenticatedLibraryRoute
+  '/_authenticated/organisation': typeof AuthenticatedOrganisationRoute
+  '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
   '/_authenticated/playground': typeof AuthenticatedPlaygroundRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/recordings': typeof AuthenticatedRecordingsRoute
   '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
@@ -119,9 +174,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/activity'
     | '/control'
     | '/dashboard'
+    | '/languages'
+    | '/library'
+    | '/organisation'
+    | '/outreach'
     | '/playground'
+    | '/profile'
     | '/recordings'
     | '/r/$code'
     | '/s/$code'
@@ -131,9 +192,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/activity'
     | '/control'
     | '/dashboard'
+    | '/languages'
+    | '/library'
+    | '/organisation'
+    | '/outreach'
     | '/playground'
+    | '/profile'
     | '/recordings'
     | '/r/$code'
     | '/s/$code'
@@ -144,9 +211,15 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/activity'
     | '/_authenticated/control'
     | '/_authenticated/dashboard'
+    | '/_authenticated/languages'
+    | '/_authenticated/library'
+    | '/_authenticated/organisation'
+    | '/_authenticated/outreach'
     | '/_authenticated/playground'
+    | '/_authenticated/profile'
     | '/_authenticated/recordings'
     | '/r/$code'
     | '/s/$code'
@@ -186,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/control': {
       id: '/_authenticated/control'
       path: '/control'
@@ -200,11 +280,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/languages': {
+      id: '/_authenticated/languages'
+      path: '/languages'
+      fullPath: '/languages'
+      preLoaderRoute: typeof AuthenticatedLanguagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/organisation': {
+      id: '/_authenticated/organisation'
+      path: '/organisation'
+      fullPath: '/organisation'
+      preLoaderRoute: typeof AuthenticatedOrganisationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outreach': {
+      id: '/_authenticated/outreach'
+      path: '/outreach'
+      fullPath: '/outreach'
+      preLoaderRoute: typeof AuthenticatedOutreachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/playground': {
       id: '/_authenticated/playground'
       path: '/playground'
       fullPath: '/playground'
       preLoaderRoute: typeof AuthenticatedPlaygroundRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/recordings': {
@@ -246,17 +361,29 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedControlRoute: typeof AuthenticatedControlRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedLanguagesRoute: typeof AuthenticatedLanguagesRoute
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedOrganisationRoute: typeof AuthenticatedOrganisationRoute
+  AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
   AuthenticatedPlaygroundRoute: typeof AuthenticatedPlaygroundRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRecordingsRoute: typeof AuthenticatedRecordingsRoute
   AuthenticatedSessionsIdRoute: typeof AuthenticatedSessionsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedControlRoute: AuthenticatedControlRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedLanguagesRoute: AuthenticatedLanguagesRoute,
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedOrganisationRoute: AuthenticatedOrganisationRoute,
+  AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
   AuthenticatedPlaygroundRoute: AuthenticatedPlaygroundRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRecordingsRoute: AuthenticatedRecordingsRoute,
   AuthenticatedSessionsIdRoute: AuthenticatedSessionsIdRoute,
 }

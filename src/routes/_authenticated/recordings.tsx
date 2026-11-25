@@ -10,6 +10,7 @@ import { PCM_SAMPLE_RATE, LONG_TEST_LIMIT_SECONDS, encodeWav, toBase64 } from "@
 import { findCuts } from "@/lib/interpretation";
 import { TARGET_LANGUAGES, TESTED_LANGUAGE_CODES } from "@/lib/languages";
 import { createRecording, finishRecording, listRecordings, processRecordingPiece } from "@/lib/recordings.functions";
+import { AppShell } from "@/components/app/AppShell";
 
 export const Route = createFileRoute("/_authenticated/recordings")({
   head: () => ({ meta: [{ title: "Recorded sermons — Logosphere" }, { name: "description", content: "Translate a recorded sermon into French or Spanish and share it with listeners." }] }),
@@ -111,7 +112,8 @@ function RecordingsPage() {
   const link = done ? `${window.location.origin}/r/${done.publicCode}` : "";
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-10">
+    <AppShell active="Recorded Sermons">
+    <div className="mx-auto max-w-4xl">
       <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="size-4" /> Dashboard</Link>
       <h1 className="mt-4 font-display text-4xl">Recorded sermons</h1>
       <p className="mt-2 text-muted-foreground">Upload a sermon you have already recorded. We translate it into French or Spanish and give you a link for listeners.</p>
@@ -175,5 +177,6 @@ function RecordingsPage() {
         </section>
       )}
     </div>
+    </AppShell>
   );
 }

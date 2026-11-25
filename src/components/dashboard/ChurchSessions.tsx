@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SOURCE_LANGUAGES, ACTIVE_TARGET_LANGUAGES, TESTED_LANGUAGE_CODES, isComingSoon } from "@/lib/languages";
 import { STATUS_TEXT, isActiveListener, sessionSeconds, fmtDuration } from "@/lib/sessions";
 
-export function ChurchSessions({ churchId, canOperate, userId }: { churchId: string; canOperate: boolean; userId: string }) {
+export function ChurchSessions({ churchId, canOperate, userId, enabledLanguages }: { churchId: string; canOperate: boolean; userId: string; enabledLanguages?: string[] }) {
   const [creating, setCreating] = useState(false);
   const { data } = useQuery({
     queryKey: ["church-sessions", churchId],
@@ -51,7 +51,7 @@ export function ChurchSessions({ churchId, canOperate, userId }: { churchId: str
             <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Plus className="size-4" /> New session</button>
           )}
         </div>
-        {creating && <NewSession churchId={churchId} userId={userId} onCancel={() => setCreating(false)} />}
+        {creating && <NewSession churchId={churchId} userId={userId} onCancel={() => setCreating(false)} enabledLanguages={enabledLanguages} />}
         <ul className="mt-4 divide-y rounded-3xl border bg-card shadow-card">
           {sessions.length === 0 && <li className="p-6 text-sm text-muted-foreground">No sessions yet.</li>}
           {sessions.map((s) => (
@@ -71,12 +71,14 @@ export function ChurchSessions({ churchId, canOperate, userId }: { churchId: str
   );
 }
 
-function NewSession({ churchId, userId, onCancel }: { churchId: string; userId: string; onCancel: () => void }) {
+function NewSession({ churchId, userId, onCancel, enabledLanguages }: { churchId: string; userId: string; onCancel: () => void; enabledLanguages: string[] | undefined }) {
+  // Only languages the church has enabled in Language Settings are offered.
+  const offered = ACTIVE_TARGET_LANGUAGES.filter((l) => !enabledLanguages || enabledLanguages.includes(l.code));
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [source, setSource] = useState("en");
-  const [targets, setTargets] = useState<string[]>(TESTED_LANGUAGE_CODES.filter((c) => ACTIVE_TARGET_LANGUAGES.some((l) => l.code === c)));
+  const [targets, setTargets] = useState<string[]>(TESTED_LANGUAGE_CODES.filter((c) => offered.some((l) => l.code === c)));
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -105,7 +107,7 @@ function NewSession({ churchId, userId, onCancel }: { churchId: string; userId: 
       <fieldset>
         <legend className="text-sm font-medium">Interpret into</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
-          {ACTIVE_TARGET_LANGUAGES.filter((l) => l.code !== source).map((l) => {
+          {offered.filter((l) => l.code !== source).map((l) => {
             const soon = isComingSoon(l.code);
             return (
               <label key={l.code} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${soon ? "text-muted-foreground" : ""}`}>
