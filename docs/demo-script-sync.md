@@ -58,3 +58,27 @@ Limits:
 
 - `bun run build` and `bun run test` (the repo's Vitest suite, 67 tests) pass.
 - No end-to-end Playwright run has been done yet. It needs the migrations applied and a signed-in test account; it is the next step before the video is recorded.
+
+## Narration check (Scenes 2–3 of the 5-minute script)
+
+Scene 1 (the story) makes no product claims, so it is not mapped.
+
+| Narration line | Shown on | Status |
+|---|---|---|
+| "Introducing LOGOSPHERE" | Home page hero | OK |
+| "First: Live Sermon Interpretation." | Home page "Try it with your own voice"; session page | OK |
+| "A preacher speaks naturally into a microphone." | Session page, Broadcaster (`sessions.$id`) | OK |
+| "Logosphere interprets the sermon in real time" | Live channels for French and Spanish | **Check the word "real time".** The last measured audible delay was about 19 s (Spanish) and 25 s (French) on a 20-minute clip, before adaptive playback. Measure again on the live site before using "real time", or say "live". |
+| "into different languages" | Languages: French and Spanish only. Portuguese and Nigerian languages show "Coming soon" | **Name the two languages** in the voice-over. |
+| "Congregants simply scan a QR code, select their preferred language and listen on their phones." | QR code on the session page, then `/s/<code>`, language picker, player | OK. Audio needs an active interpreter for the chosen language. |
+| "Second: Recorded Sermon Translation." | `/recordings` (operator) and `/r/<code>` (listener) | OK |
+| "Upload a recorded sermon, select your preferred language" | Recordings form: WAV or MP3, French or Spanish, up to 21 minutes | OK. Keep the browser open while it translates. |
+| "Third: Evangelism and Outreach." | Home page "Beyond the sermon" section | OK |
+| "You speak in your language, and they hear the message in theirs." | Live channels, same as the first capability | OK |
+| "When they respond or ask questions, Logosphere translates their words back to you." | Listener "Answer the preacher" panel, then "Listener replies" on the session page | **Text only, not spoken.** Each reply is up to 10 seconds, one at a time, and limited to 60 seconds per visitor per day. Say "shows" rather than "speaks", or add an audio output. |
+| "Now, a conversation can happen without needing an interpreter physically present." | As above | **Overstated.** Replies are single short turns, not a conversation. Suggest "answers can be understood without an interpreter". |
+
+Open items for the team, not changed in the product yet:
+1. **"Real time"**: re-measure the audible delay on the live site, or change the word.
+2. **Listener page copy**: `src/routes/s.$code.tsx` says "Interpretation into <language> isn't connected yet." That text shows on the live site while interpretation runs, which contradicts the video. It needs rewording once the team agrees what it should say.
+3. **Landing page "Coming soon"** for two-way listening stays until replies are checked on the live site.
