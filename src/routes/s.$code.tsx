@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Radio, Headphones, ArrowLeft, Loader2, WifiOff } from "lucide-react";
 import { useListen } from "@/components/live/useListen";
+import { ListenerReply } from "@/components/listener/ListenerReply";
 import { supabase } from "@/integrations/supabase/client";
 import { TARGET_LANGUAGES, STATUS_LABEL } from "@/lib/languages";
 
@@ -160,6 +161,7 @@ function Player({ code, s, lang, online, onBack }: { code: string; s: PublicSess
         <p className="mt-2 text-xs text-muted-foreground">Interpretation into {l.name} isn't connected yet. Keep this page open.</p>
         <button onClick={() => setOriginal((o) => !o)} className="mt-4 rounded-full border px-4 py-2 text-xs">{original ? `Back to ${l.name} channel` : "Listen to the original voice instead"}</button>
       </div>
+      <ListenerReply code={code} language={lang} live={s.status === "live"} />
     </div>
   );
 }

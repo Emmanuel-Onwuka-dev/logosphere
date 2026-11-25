@@ -36,4 +36,12 @@ describe("translateText", () => {
     vi.stubEnv("DEEPL_API_KEY", "");
     await expect(translateText("Peace", "en", "fr")).rejects.toThrow("DEEPL_API_KEY is not set");
   });
+  it("translates a listener reply from French into English (EN-US target)", async () => {
+    vi.stubEnv("DEEPL_API_KEY", "key:fx");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ translations: [{ text: "Peace be with you." }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await translateText("Que la paix soit avec vous.", "fr", "en")).toBe("Peace be with you.");
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toEqual({ text: ["Que la paix soit avec vous."], source_lang: "FR", target_lang: "EN-US" });
+  });
 });

@@ -10,8 +10,8 @@ export function languageName(code: string): string {
 }
 
 /** DeepL target codes for the active languages. Portuguese uses Brazilian spelling. */
-const DEEPL_TARGET: Record<string, string> = { fr: "FR", es: "ES", pt: "PT-BR" };
-const DEEPL_SOURCE: Record<string, string> = { en: "EN" };
+const DEEPL_TARGET: Record<string, string> = { fr: "FR", es: "ES", pt: "PT-BR", en: "EN-US" };
+const DEEPL_SOURCE: Record<string, string> = { en: "EN", fr: "FR", es: "ES", pt: "PT" };
 
 /** Free-plan keys end in ":fx" and must use the free host. */
 export function deeplEndpoint(apiKey: string): string {

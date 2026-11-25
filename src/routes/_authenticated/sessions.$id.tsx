@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Copy, Pause, Play, Square, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Broadcaster } from "@/components/live/Broadcaster";
+import { SessionReplies } from "@/components/live/SessionReplies";
 import { Switch } from "@/components/ui/switch";
 import { TARGET_LANGUAGES, SOURCE_LANGUAGES, STATUS_LABEL, isComingSoon } from "@/lib/languages";
 import { STATUS_TEXT, publicLink, isActiveListener, sessionSeconds, fmtDuration, setStatus, type Session } from "@/lib/sessions";
@@ -128,6 +129,7 @@ function SessionPage() {
           <p className="mt-4 break-all font-mono text-xs text-muted-foreground">{link}</p>
           <button onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }} className="mt-3 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm"><Copy className="size-3.5" /> Copy link</button>
         </aside>
+        <div className="md:col-span-2"><SessionReplies sessionId={s.id} /></div>
       </div>
     </Shell>
   );

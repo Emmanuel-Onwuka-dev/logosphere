@@ -2,9 +2,9 @@ import { PIECE_TIMEOUT_MS, withOneRetry } from "@/lib/interpretation";
 import { translateText } from "@/lib/translate";
 import { DEEPGRAM_VOICES, PCM_SAMPLE_RATE, toBase64, splitSpeechText, joinSpeechWav } from "@/lib/deepgram";
 
-export async function deepgramTranscribe(pcm: Uint8Array, key: string) {
+export async function deepgramTranscribe(pcm: Uint8Array, key: string, language: "en" | "fr" | "es" = "en") {
   const start = performance.now();
-  const url = "wss://api.deepgram.com/v1/listen?model=nova-3&language=en&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&punctuate=true&smart_format=true";
+  const url = `wss://api.deepgram.com/v1/listen?model=nova-3&language=${language}&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&punctuate=true&smart_format=true`;
   // Both Node's standards WebSocket and the published Worker support this documented auth protocol.
   // The socket is created only here on the server; neither URL nor credential is returned.
   const socket = new WebSocket(url, ["token", key]);

@@ -61,6 +61,7 @@ function Dashboard() {
             <span className="font-display text-xl tracking-tight">Logosphere</span>
           </Link>
           <div className="flex items-center gap-2">
+          {data?.church && <Link to="/recordings" className="rounded-full border px-4 py-2 text-sm">Recorded sermons</Link>}
           {data?.roles.some((r) => r.role === "platform_admin") && <Link to="/control" className="rounded-full border px-4 py-2 text-sm">Control Centre</Link>}
           {data?.roles.some((r) => r.role === "platform_admin") && <Link to="/playground" className="rounded-full border px-4 py-2 text-sm">Model Playground</Link>}
           <button onClick={signOut} className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm"><LogOut className="size-3.5" /> Sign out</button>

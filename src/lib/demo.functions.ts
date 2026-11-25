@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { runInterpretation } from "@/lib/deepgram.server";
 import { readPcmWav, validateDuration } from "@/lib/deepgram";
@@ -9,14 +8,6 @@ const demoInput = z.object({
   audioBase64: z.string().min(1).max(700_000),
   targetLanguage: z.enum(["fr", "es"]),
 });
-
-/** A hash of the visitor's IP. The IP itself is never stored. */
-async function visitorKey(): Promise<string> {
-  const headers = getRequest()?.headers;
-  const ip = headers?.get("cf-connecting-ip") ?? headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`logosphere-demo:${ip}`));
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 /**
  * Public, rate-limited demo: one streaming piece of English speech in, translated text and speech out.
@@ -36,7 +27,7 @@ export const demoInterpretPiece = createServerFn({ method: "POST" })
     const { workerDb } = await import("@/lib/worker-db.server");
     const seconds = Math.max(1, Math.ceil(durationSeconds));
     const { data: used, error } = await (workerDb() as any).rpc("demo_take_seconds", {
-      p_key: await visitorKey(), p_seconds: seconds, p_limit: DEMO_LIMIT_SECONDS,
+      p_key: await (await import("@/lib/visitor.server")).visitorKey(), p_seconds: seconds, p_limit: DEMO_LIMIT_SECONDS,
     });
     if (error) throw new Error("The demo is unavailable right now");
     if (used === null || used === undefined) {

@@ -15,6 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPlaygroundRouteImport } from './routes/_authenticated/playground'
+import { Route as AuthenticatedRecordingsRouteImport } from './routes/_authenticated/recordings'
+import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as AuthenticatedSessionsIdRouteImport } from './routes/_authenticated/sessions.$id'
 import { Route as ApiPublicWorkerRouteImport } from './routes/api/public/worker'
@@ -48,6 +50,16 @@ const AuthenticatedPlaygroundRoute = AuthenticatedPlaygroundRouteImport.update({
   path: '/playground',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecordingsRoute = AuthenticatedRecordingsRouteImport.update({
+  id: '/recordings',
+  path: '/recordings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SCodeRoute = SCodeRouteImport.update({
   id: '/s/$code',
   path: '/s/$code',
@@ -70,6 +82,8 @@ export interface FileRoutesByFullPath {
   '/control': typeof AuthenticatedControlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/playground': typeof AuthenticatedPlaygroundRoute
+  '/recordings': typeof AuthenticatedRecordingsRoute
+  '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRoute
   '/api/public/worker': typeof ApiPublicWorkerRoute
@@ -80,6 +94,8 @@ export interface FileRoutesByTo {
   '/control': typeof AuthenticatedControlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/playground': typeof AuthenticatedPlaygroundRoute
+  '/recordings': typeof AuthenticatedRecordingsRoute
+  '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
   '/sessions/$id': typeof AuthenticatedSessionsIdRoute
   '/api/public/worker': typeof ApiPublicWorkerRoute
@@ -92,6 +108,8 @@ export interface FileRoutesById {
   '/_authenticated/control': typeof AuthenticatedControlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/playground': typeof AuthenticatedPlaygroundRoute
+  '/_authenticated/recordings': typeof AuthenticatedRecordingsRoute
+  '/r/$code': typeof RCodeRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/sessions/$id': typeof AuthenticatedSessionsIdRoute
   '/api/public/worker': typeof ApiPublicWorkerRoute
@@ -104,6 +122,8 @@ export interface FileRouteTypes {
     | '/control'
     | '/dashboard'
     | '/playground'
+    | '/recordings'
+    | '/r/$code'
     | '/s/$code'
     | '/sessions/$id'
     | '/api/public/worker'
@@ -114,6 +134,8 @@ export interface FileRouteTypes {
     | '/control'
     | '/dashboard'
     | '/playground'
+    | '/recordings'
+    | '/r/$code'
     | '/s/$code'
     | '/sessions/$id'
     | '/api/public/worker'
@@ -125,6 +147,8 @@ export interface FileRouteTypes {
     | '/_authenticated/control'
     | '/_authenticated/dashboard'
     | '/_authenticated/playground'
+    | '/_authenticated/recordings'
+    | '/r/$code'
     | '/s/$code'
     | '/_authenticated/sessions/$id'
     | '/api/public/worker'
@@ -134,6 +158,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RCodeRoute: typeof RCodeRoute
   SCodeRoute: typeof SCodeRoute
   ApiPublicWorkerRoute: typeof ApiPublicWorkerRoute
 }
@@ -182,6 +207,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlaygroundRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recordings': {
+      id: '/_authenticated/recordings'
+      path: '/recordings'
+      fullPath: '/recordings'
+      preLoaderRoute: typeof AuthenticatedRecordingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$code': {
       id: '/s/$code'
       path: '/s/$code'
@@ -210,6 +249,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedControlRoute: typeof AuthenticatedControlRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPlaygroundRoute: typeof AuthenticatedPlaygroundRoute
+  AuthenticatedRecordingsRoute: typeof AuthenticatedRecordingsRoute
   AuthenticatedSessionsIdRoute: typeof AuthenticatedSessionsIdRoute
 }
 
@@ -217,6 +257,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedControlRoute: AuthenticatedControlRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPlaygroundRoute: AuthenticatedPlaygroundRoute,
+  AuthenticatedRecordingsRoute: AuthenticatedRecordingsRoute,
   AuthenticatedSessionsIdRoute: AuthenticatedSessionsIdRoute,
 }
 
@@ -227,6 +268,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RCodeRoute: RCodeRoute,
   SCodeRoute: SCodeRoute,
   ApiPublicWorkerRoute: ApiPublicWorkerRoute,
 }
