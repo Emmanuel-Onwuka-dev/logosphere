@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 type Line = { index: number; english: string; translation: string };
 const MAX_PENDING = 3;
 const SILENCE_PEAK = 0.01;
+const METER_BARS = 24;
 const LANGS = TARGET_LANGUAGES.filter((l) => TESTED_LANGUAGE_CODES.includes(l.code));
 
 /**
@@ -24,6 +25,7 @@ export function TryLive() {
   const [lines, setLines] = useState<Line[]>([]);
   const [remaining, setRemaining] = useState(DEMO_LIMIT_SECONDS);
   const [status, setStatus] = useState<string | null>(null);
+  const [levels, setLevels] = useState<number[]>(() => Array(METER_BARS).fill(0));
   const stopRef = useRef<(() => void) | null>(null);
   const runningRef = useRef(false);
 
@@ -41,6 +43,18 @@ export function TryLive() {
     const proc = capture.createScriptProcessor(4096, 1, 1);
     const sink = capture.createGain(); sink.gain.value = 0;
     src.connect(proc); proc.connect(sink); sink.connect(capture.destination);
+    // Read-only meter: shows what the microphone is picking up. It does not affect the audio sent for translation.
+    const analyser = capture.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.6;
+    src.connect(analyser);
+    const bins = new Uint8Array(analyser.frequencyBinCount);
+    const meter = setInterval(() => {
+      analyser.getByteFrequencyData(bins);
+      const per = Math.floor(bins.length / METER_BARS);
+      setLevels(Array.from({ length: METER_BARS }, (_, b) => {
+        let sum = 0; for (let i = b * per; i < (b + 1) * per; i++) sum += bins[i] ?? 0;
+        return Math.min(1, sum / per / 180);
+      }));
+    }, 80);
 
     let stopped = false;
     let buffer = new Float32Array(0);
@@ -64,6 +78,7 @@ export function TryLive() {
     const stop = () => {
       if (stopped) return;
       stopped = true; runningRef.current = false;
+      clearInterval(meter); setLevels(Array(METER_BARS).fill(0));
       proc.onaudioprocess = null;
       stream.getTracks().forEach((t) => t.stop());
       void capture.close(); void out.close();
@@ -91,7 +106,8 @@ export function TryLive() {
         if ("error" in r && r.error) { setStatus(r.error); if (r.error.includes("today's")) stop(); return; }
         if (!("transcript" in r)) return;
         if (r.remainingSeconds !== undefined) setRemaining(r.remainingSeconds);
-        if (r.transcript) setLines((all) => [...all, { index, english: r.transcript, translation: r.translation }]);
+        if (r.transcript) { setStatus(null); setLines((all) => [...all, { index, english: r.transcript, translation: r.translation }]); }
+        else setStatus("No English speech was picked up in the last few seconds. Speak closer to the microphone, or check the meter below.");
         play(r.audioBase64);
       });
     };
@@ -135,7 +151,14 @@ export function TryLive() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-4">
+      <div className="mt-6 flex h-12 items-end gap-1" aria-label="Microphone level" role="img">
+        {levels.map((v, i) => (
+          <span key={i} className="w-2 rounded-full bg-foreground/70 transition-[height] duration-75" style={{ height: `${Math.max(6, Math.round(v * 100))}%` }} />
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{running ? (levels.some((v) => v > 0.25) ? "Hearing sound" : "Listening: no sound yet") : "Meter shows your microphone while listening."}</p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
         {running ? (
           <button onClick={() => stopRef.current?.()} className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-medium">
             <Square className="size-4" /> Stop
