@@ -80,5 +80,5 @@ Scene 1 (the story) makes no product claims, so it is not mapped.
 
 Open items for the team, not changed in the product yet:
 1. **"Real time"**: re-measure the audible delay on the live site, or change the word.
-2. **Listener page copy**: `src/routes/s.$code.tsx` says "Interpretation into <language> isn't connected yet." That text shows on the live site while interpretation runs, which contradicts the video. It needs rewording once the team agrees what it should say.
+2. **Listener page copy**: done. The line now reads "Keep this page open while the service is running." The status line above it still reports whether interpreted audio is waiting or playing.
 3. **Landing page "Coming soon"** for two-way listening stays until replies are checked on the live site.
