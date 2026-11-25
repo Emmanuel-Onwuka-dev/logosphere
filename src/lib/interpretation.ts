@@ -19,6 +19,8 @@ export function nextFast(backlogSeconds: number, fast: boolean): boolean {
   return fast;
 }
 export const speedFor = (base: number, fast: boolean) => (fast ? Math.max(base, AUTO_FAST_SPEED) : base);
+/** Seconds of live audio each visitor may use per UTC day on the public landing-page demo. */
+export const DEMO_LIMIT_SECONDS = 180;
 export const PIECE_TIMEOUT_MS = 30000;
 const FRAME_SECONDS = 0.01;
 

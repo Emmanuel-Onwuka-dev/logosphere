@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Play, Mic, Sparkles, Headphones, QrCode, Captions, Languages, Settings2, Radio, Users, Building2, Cpu, Sparkle } from "lucide-react";
 import hero from "@/assets/hero-illustration.jpg";
-import { LiveDemo } from "@/components/landing/LiveDemo";
+import { TryLive } from "@/components/landing/TryLive";
 import { TARGET_LANGUAGES, STATUS_LABEL, isComingSoon } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 
@@ -93,10 +93,10 @@ function Index() {
       {/* Demo */}
       <section className="mx-auto max-w-5xl px-5 pb-28">
         <div className="mb-8 text-center">
-          <p className={eyebrow}>Live interpretation demonstration</p>
-          <h2 className="mt-3 font-display text-3xl sm:text-4xl">One microphone. Six channels.</h2>
+          <p className={eyebrow}>Live demonstration</p>
+          <h2 className="mt-3 font-display text-3xl sm:text-4xl">Try it with your own voice.</h2>
         </div>
-        <LiveDemo />
+        <TryLive />
       </section>
 
       {/* How */}
