@@ -10,7 +10,7 @@ import { useChurchContext } from "@/lib/churchContext";
 import { TARGET_LANGUAGES, TESTED_LANGUAGE_CODES } from "@/lib/languages";
 import { createSermon, startTranscription, MAX_SOURCE_BYTES } from "@/lib/sermons.functions";
 
-export const Route = createFileRoute("/_authenticated/recordings")({
+export const Route = createFileRoute("/_authenticated/recordings/")({
   head: () => ({ meta: [{ title: "Recorded sermons — Logosphere" }, { name: "description", content: "Upload a recorded sermon, check its transcript, and translate it." }] }),
   component: RecordingsPage,
 });
