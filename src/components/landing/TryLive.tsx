@@ -28,6 +28,7 @@ export function TryLive() {
   const [levels, setLevels] = useState<number[]>(() => Array(METER_BARS).fill(0));
   const stopRef = useRef<(() => void) | null>(null);
   const runningRef = useRef(false);
+  const linesCount = useRef(0);
 
   useEffect(() => () => stopRef.current?.(), []);
 
@@ -86,7 +87,7 @@ export function TryLive() {
     };
     stopRef.current = stop;
     runningRef.current = true;
-    setRunning(true); setLines([]); setRemaining(DEMO_LIMIT_SECONDS);
+    setRunning(true); setLines([]); setRemaining(DEMO_LIMIT_SECONDS); linesCount.current = 0;
 
     const send = (pcm: Float32Array) => {
       const index = pieceIndex++;
@@ -106,8 +107,8 @@ export function TryLive() {
         if ("error" in r && r.error) { setStatus(r.error); if (r.error.includes("today's")) stop(); return; }
         if (!("transcript" in r)) return;
         if (r.remainingSeconds !== undefined) setRemaining(r.remainingSeconds);
-        if (r.transcript) { setStatus(null); setLines((all) => [...all, { index, english: r.transcript, translation: r.translation }]); }
-        else setStatus("No English speech was picked up in the last few seconds. Speak closer to the microphone, or check the meter below.");
+        if (r.transcript) { linesCount.current += 1; setStatus(null); setLines((all) => [...all, { index, english: r.transcript, translation: r.translation }]); }
+        else if (linesCount.current === 0) setStatus("No English speech was picked up in the last few seconds. Speak closer to the microphone, or check the meter below.");
         play(r.audioBase64);
       });
     };
