@@ -9,7 +9,7 @@ const BUCKET = "sermon-audio";
 const SIGNED_URL_SECONDS = 60 * 60;
 const targetsSchema = z.array(z.enum(["fr", "es"])).min(1).max(2);
 
-async function assertChurchOperator(context: { supabase: any; userId: string }, churchId: string) {
+export async function assertChurchOperator(context: { supabase: any; userId: string }, churchId: string) {
   const sb = context.supabase;
   const checks = await Promise.all([
     sb.rpc("has_church_role", { _user_id: context.userId, _church_id: churchId, _role: "church_admin" }),
@@ -19,7 +19,7 @@ async function assertChurchOperator(context: { supabase: any; userId: string }, 
   if (!checks.some((c: any) => c.data === true)) throw new Error("Forbidden");
 }
 
-async function recordingFor(id: string) {
+export async function recordingFor(id: string) {
   const { workerDb } = await import("@/lib/worker-db.server");
   const { data, error } = await (workerDb() as any).from("recordings").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error("Could not load the recording");
