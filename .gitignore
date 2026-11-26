@@ -34,3 +34,7 @@ dist-ssr
 # Local secrets (.env is tracked by Lovable and holds public values only)
 .env.local
 .env.*.local
+
+# Playwright output
+/test-results/
+/playwright-report/
