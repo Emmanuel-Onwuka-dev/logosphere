@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const email = process.env["E2E_EMAIL"];
 const password = process.env["E2E_PASSWORD"];
@@ -9,9 +9,11 @@ const title = `E2E sermon ${Date.now()}`;
 
 async function signIn(page: Page) {
   await page.goto("/auth");
+  // Wait for the app to load its scripts; submitting earlier falls back to a plain form post.
+  await page.waitForLoadState("networkidle");
   await page.getByLabel("Email").fill(email!);
   await page.getByLabel("Password").fill(password!);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
@@ -36,7 +38,7 @@ test("upload a sermon, see its transcript, then archive and delete it", async ({
   await signIn(page);
   await page.goto("/recordings");
   await page.getByLabel("Sermon title").fill(title);
-  await page.getByLabel(/Audio file/).setInputFiles(path.join(__dirname, "fixtures", "sermon.wav"));
+  await page.getByLabel(/Audio file/).setInputFiles(fileURLToPath(new URL("./fixtures/sermon.wav", import.meta.url)));
   await page.getByRole("button", { name: "Upload and transcribe" }).click();
   // Transcription can take a minute; the page opens on the sermon when it is ready.
   await expect(page).toHaveURL(/\/recordings\/[0-9a-f-]{36}$/, { timeout: 240_000 });
@@ -45,9 +47,7 @@ test("upload a sermon, see its transcript, then archive and delete it", async ({
 
   await page.goto("/library");
   await expect(page.getByRole("link", { name: title })).toBeVisible();
-  page.once("dialog", (d) => d.accept());
-  const row = page.getByRole("listitem").filter({ hasText: title });
-  await row.getByRole("button", { name: "Archive" }).click();
+  await page.getByRole("listitem").filter({ hasText: title }).getByRole("button", { name: "Archive", exact: true }).click();
   await expect(page.getByRole("link", { name: title })).toHaveCount(0);
   await page.getByLabel("Filter sermons").selectOption("archived");
   await expect(page.getByRole("link", { name: title })).toBeVisible();
