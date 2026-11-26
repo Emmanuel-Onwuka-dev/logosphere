@@ -1,83 +1,74 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Mic, Square, Loader2 } from "lucide-react";
-import { openClipRecorder, type ClipRecorder } from "@/components/live/clipRecorder";
-import { replyFromListener } from "@/lib/replies.functions";
+import { Send, Loader2 } from "lucide-react";
+import { replyFromListener, REPLY_MAX_CHARACTERS } from "@/lib/replies.functions";
 import { TARGET_LANGUAGES } from "@/lib/languages";
 
-const MAX_REPLY_SECONDS = 10;
+type Sent = { original: string; english: string };
 
 /**
- * Lets a listener answer the preacher in their own language. The reply is transcribed, translated to English
- * and shown to the preacher in the control view. One reply at a time.
+ * Listener comments, like a live chat: the listener types a message in their language and the preacher sees it
+ * in English. Text only; nothing is recorded or spoken.
  */
 export function ListenerReply({ code, language, live }: { code: string; language: string; live: boolean }) {
-  const reply = useServerFn(replyFromListener);
-  const [phase, setPhase] = useState<"idle" | "recording" | "sending" | "sent" | "error">("idle");
-  const [elapsed, setElapsed] = useState(0);
-  const [result, setResult] = useState<{ original: string; english: string } | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const recorderRef = useRef<ClipRecorder | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const send = useServerFn(replyFromListener);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<Sent[]>([]);
   const langName = TARGET_LANGUAGES.find((l) => l.code === language)?.name ?? language;
-
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); recorderRef.current?.cancel(); }, []);
-
-  async function send() {
-    const rec = recorderRef.current; if (!rec) return;
-    if (timerRef.current) clearInterval(timerRef.current);
-    recorderRef.current = null;
-    const clip = rec.stop();
-    setPhase("sending");
-    try {
-      const out = await reply({ data: { code, language: language as "fr" | "es", audioBase64: clip.audioBase64 } });
-      setResult(out); setPhase("sent");
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Your reply could not be sent."); setPhase("error");
-    }
-  }
-
-  async function start() {
-    setMessage(null); setResult(null);
-    try {
-      const rec = await openClipRecorder();
-      recorderRef.current = rec;
-      setElapsed(0); setPhase("recording");
-      timerRef.current = setInterval(() => {
-        const t = rec.elapsed();
-        setElapsed(Math.floor(t));
-        if (t >= MAX_REPLY_SECONDS) void send();
-      }, 250);
-    } catch {
-      setMessage("Microphone access is needed to reply. Allow it in your browser and try again."); setPhase("error");
-    }
-  }
 
   if (!live) return null;
 
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const message = text.trim();
+    if (!message || busy) return;
+    setBusy(true); setError(null);
+    try {
+      const out = await send({ data: { code, language: language as "fr" | "es", text: message } });
+      setSent((all) => [out, ...all]);
+      setText("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Your message could not be sent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="mt-6 rounded-3xl border bg-card p-6 text-center shadow-card">
-      <p className="font-medium">Answer the preacher</p>
-      <p className="mt-1 text-xs text-muted-foreground">Speak in {langName}, up to {MAX_REPLY_SECONDS} seconds. The preacher sees your reply in English.</p>
+    <div className="mt-6 rounded-3xl border bg-card p-6 text-left shadow-card">
+      <p className="font-medium">Send a message to the preacher</p>
+      <p className="mt-1 text-xs text-muted-foreground">Write in {langName}. The preacher reads it in English. Up to {REPLY_MAX_CHARACTERS} characters.</p>
 
-      {phase === "recording" ? (
-        <button onClick={() => void send()} className="mt-4 inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-medium">
-          <Square className="size-4" /> Send reply ({elapsed}s)
+      <form onSubmit={submit} className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <label className="sr-only" htmlFor="listener-message">Your message in {langName}</label>
+        <textarea
+          id="listener-message"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={REPLY_MAX_CHARACTERS}
+          rows={2}
+          disabled={busy}
+          placeholder={`Write in ${langName}…`}
+          className="min-h-[3rem] flex-1 rounded-xl border bg-background px-3 py-2 text-sm"
+        />
+        <button type="submit" disabled={busy || !text.trim()} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send
         </button>
-      ) : phase === "sending" ? (
-        <p className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Sending…</p>
-      ) : (
-        <button onClick={start} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
-          <Mic className="size-4" /> {phase === "sent" ? "Reply again" : "Reply"}
-        </button>
-      )}
+      </form>
 
-      {message && <p className="mt-3 text-sm text-destructive">{message}</p>}
-      {result && (
-        <div className="mt-4 space-y-2 text-left">
-          <p className="text-sm text-muted-foreground">You said: {result.original}</p>
-          <p className="font-display text-lg">In English: {result.english}</p>
-        </div>
+      {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+
+      {sent.length > 0 && (
+        <ul className="mt-5 space-y-3">
+          {sent.map((m, i) => (
+            <li key={i} className="rounded-2xl bg-background p-4 text-sm">
+              <p>{m.original}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Sent to the preacher as: {m.english}</p>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
