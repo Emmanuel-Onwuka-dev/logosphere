@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app/AppShell";
 import { useChurchContext } from "@/lib/churchContext";
-import { TARGET_LANGUAGES, TESTED_LANGUAGE_CODES, STATUS_LABEL } from "@/lib/languages";
+import { TARGET_LANGUAGES, TESTED_LANGUAGE_CODES, STATUS_LABEL, capabilityOf } from "@/lib/languages";
 
 export const Route = createFileRoute("/_authenticated/languages")({
   head: () => ({ meta: [{ title: "Language settings — Logosphere" }] }),
@@ -51,6 +51,7 @@ function LanguagesPage() {
                 <div>
                   <p className="font-medium">{l.name} <span className="text-muted-foreground">· {l.native}</span></p>
                   <p className="text-xs text-muted-foreground">{verified ? "Verified: speech, translation and voice" : `${STATUS_LABEL[l.status]}. Not available yet.`}</p>
+                  <p className="mt-1 flex gap-3 text-xs"><span>{capabilityOf(l.code).speech ? "✓" : "✗"} Speech</span><span>{capabilityOf(l.code).translation ? "✓" : "✗"} Translation</span><span>{capabilityOf(l.code).voice ? "✓" : "✗"} Voice</span></p>
                 </div>
                 <button
                   type="button"

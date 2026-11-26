@@ -45,3 +45,17 @@ describe("translateText", () => {
     expect(JSON.parse(String(init.body))).toEqual({ text: ["Que la paix soit avec vous."], source_lang: "FR", target_lang: "EN-US" });
   });
 });
+
+describe("translation provider switch", () => {
+  it("rejects an unknown provider instead of falling back", async () => {
+    vi.stubEnv("TRANSLATION_PROVIDER", "nonsense");
+    vi.stubEnv("DEEPL_API_KEY", "key:fx");
+    await expect(translateText("Peace", "en", "fr")).rejects.toThrow(/Unknown translation provider/);
+    vi.unstubAllEnvs();
+  });
+  it("says clearly that Google is not connected yet", async () => {
+    vi.stubEnv("TRANSLATION_PROVIDER", "google");
+    await expect(translateText("Peace", "en", "fr")).rejects.toThrow(/not connected yet/);
+    vi.unstubAllEnvs();
+  });
+});

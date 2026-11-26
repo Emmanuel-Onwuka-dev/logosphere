@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deepgramSpeak, deepgramTranscribe, runInterpretation } from "@/lib/deepgram.server";
 import { readPcmWav, validateDuration } from "@/lib/deepgram";
 import { translateText } from "@/lib/translate";
+import { recordUsage } from "@/lib/usage.server";
 
 const audioInput = z.object({ audioBase64: z.string().min(1).max(5_200_000), mode: z.enum(["clip", "piece"]) });
 const textInput = z.object({ text: z.string().trim().min(1).max(12000), targetLanguage: z.enum(["fr", "es", "pt"]) });
@@ -101,5 +102,8 @@ export const interpretLivePiece = createServerFn({ method: "POST" })
         last_error: out.error?.slice(0, 1000) ?? null, latency_ms: Math.round(performance.now() - started), worker_id: "preacher-device", engine_id: null,
       }, { onConflict: "session_id,language" });
     } catch (e) { console.warn("channel status not saved:", e instanceof Error ? e.message : e); }
+    await recordUsage(s.church_id, "stt_seconds", "deepgram", durationSeconds, "live");
+    await recordUsage(s.church_id, "translation_chars", "deepl", out.transcript.length, "live");
+    await recordUsage(s.church_id, "tts_chars", "deepgram", out.translation.length, "live");
     return out;
   });

@@ -6,6 +6,7 @@ import { readPcmWav, validateDuration } from "@/lib/deepgram";
 import { translateText } from "@/lib/translate";
 import { transcribeWithAssemblyAI } from "@/lib/assemblyai.server";
 import { assertChurchOperator } from "@/lib/recordings.functions";
+import { recordUsage } from "@/lib/usage.server";
 
 /** Seconds of listener speech each visitor may send per UTC day. Separate from the public demo allowance. */
 export const REPLY_LIMIT_SECONDS = 60;
@@ -32,7 +33,7 @@ export const replyFromListener = createServerFn({ method: "POST" })
     const { workerDb } = await import("@/lib/worker-db.server");
     const db = workerDb() as any;
     const { visitorKey } = await import("@/lib/visitor.server");
-    const { data: session } = await db.from("sessions").select("id, status").eq("public_code", data.code).maybeSingle();
+    const { data: session } = await db.from("sessions").select("id, status, church_id").eq("public_code", data.code).maybeSingle();
     if (!session) throw new Error("This service was not found");
     if (session.status !== "live") throw new Error("Replies are only open while the service is live");
 
@@ -49,6 +50,8 @@ export const replyFromListener = createServerFn({ method: "POST" })
       session_id: session.id, language: data.language, original, english,
     });
     if (insertError) throw new Error("Could not send your reply");
+    await recordUsage(session.church_id, "stt_seconds", "assemblyai", durationSeconds, "reply");
+    await recordUsage(session.church_id, "translation_chars", "deepl", original.length, "reply");
     return { original, english };
   });
 
@@ -68,5 +71,6 @@ export const speakReplyToPreacher = createServerFn({ method: "POST" })
     const key = process.env["DEEPGRAM_API_KEY"];
     if (!key) throw new Error("The speech service is not configured");
     const spoken = await deepgramSpeak(reply.english, "en", key);
+    await recordUsage(reply.session.church_id, "tts_chars", "deepgram", reply.english.length, "reply");
     return { audioBase64: spoken.audioBase64, mimeType: spoken.mimeType };
   });

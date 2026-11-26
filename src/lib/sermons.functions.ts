@@ -6,6 +6,7 @@ import { deepgramSpeak } from "@/lib/deepgram.server";
 import { deepgramTranscribeUrl } from "@/lib/deepgram.prerecorded.server";
 import { translateText } from "@/lib/translate";
 import { TESTED_LANGUAGE_CODES } from "@/lib/languages";
+import { recordUsage } from "@/lib/usage.server";
 
 const BUCKET = "sermon-audio";
 export const MAX_SOURCE_BYTES = 50 * 1024 * 1024;
@@ -74,6 +75,7 @@ export const startTranscription = createServerFn({ method: "POST" })
       })));
       if (error) throw new Error("Could not save the transcript");
       await db.from("recordings").update({ transcript_status: "ready", duration_seconds: result.durationSeconds }).eq("id", recording.id);
+      await recordUsage(recording.church_id, "stt_seconds", "deepgram", result.durationSeconds, "recording");
       return { segments: result.segments.length, durationSeconds: result.durationSeconds };
     } catch (e) {
       const message = e instanceof Error ? e.message : "Transcription failed";
@@ -141,6 +143,10 @@ export const translateSegment = createServerFn({ method: "POST" })
     }, { onConflict: "recording_id,language,piece_index" });
     if (error) throw new Error("Could not save the translated segment");
     if (recording.status === "processing") await db.from("recordings").update({ status: "ready" }).eq("id", recording.id);
+    if (text) {
+      await recordUsage(recording.church_id, "translation_chars", "deepl", text.length, "recording");
+      await recordUsage(recording.church_id, "tts_chars", "deepgram", translation.length, "recording");
+    }
     return { translation, hasAudio: !!storagePath };
   });
 

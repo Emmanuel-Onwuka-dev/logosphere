@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app/AppShell";
+import { UsagePanel } from "@/components/app/UsagePanel";
 import { useChurchContext } from "@/lib/churchContext";
 import { dashboardStats, sessionSeconds } from "@/lib/dashboardStats";
 
@@ -60,6 +61,8 @@ function ActivityPage() {
                 </div>
               ))}
             </section>
+
+            <UsagePanel churchId={churchId} />
 
             <section className="mt-10 rounded-3xl border bg-card p-6 shadow-card">
               <h2 className="font-display text-2xl">Live sessions</h2>

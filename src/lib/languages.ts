@@ -39,3 +39,25 @@ export const STATUS_LABEL: Record<LanguageStatus, string> = {
   unavailable: "Unavailable",
   paused: "Coming soon",
 };
+
+/**
+ * What each engine can do for a language, from the providers' documentation. A language is enabled for a church
+ * only when all three are true AND it is in TESTED_LANGUAGE_CODES (someone has heard it working end to end).
+ */
+export const CAPABILITIES: Readonly<Record<string, { speech: boolean; translation: boolean; voice: boolean }>> = {
+  fr: { speech: true, translation: true, voice: true },
+  es: { speech: true, translation: true, voice: true },
+  pt: { speech: true, translation: true, voice: false },
+  ig: { speech: false, translation: false, voice: false },
+  yo: { speech: false, translation: false, voice: false },
+  ha: { speech: false, translation: false, voice: false },
+};
+
+export function capabilityOf(code: string) {
+  return CAPABILITIES[code] ?? { speech: false, translation: false, voice: false };
+}
+
+export const isVerified = (code: string) => {
+  const c = capabilityOf(code);
+  return c.speech && c.translation && c.voice && TESTED_LANGUAGE_CODES.includes(code);
+};
