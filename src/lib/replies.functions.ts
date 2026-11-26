@@ -1,11 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { deepgramSpeak } from "@/lib/deepgram.server";
 import { readPcmWav, validateDuration } from "@/lib/deepgram";
 import { translateText } from "@/lib/translate";
 import { transcribeWithAssemblyAI } from "@/lib/assemblyai.server";
-import { assertChurchOperator } from "@/lib/recordings.functions";
 import { recordUsage } from "@/lib/usage.server";
 
 /** Seconds of listener speech each visitor may send per UTC day. Separate from the public demo allowance. */
@@ -53,30 +50,4 @@ export const replyFromListener = createServerFn({ method: "POST" })
     await recordUsage(session.church_id, "stt_seconds", "assemblyai", durationSeconds, "reply");
     await recordUsage(session.church_id, "translation_chars", "deepl", original.length, "reply");
     return { original, english };
-  });
-
-/**
- * Operator only: reads a listener's reply aloud in English on this device. Played one at a time, from the control view.
- * The audio is generated on demand and is not stored.
- */
-export const speakReplyToPreacher = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ replyId: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    const { workerDb } = await import("@/lib/worker-db.server");
-    const db = workerDb() as any;
-    const { data: reply } = await db.from("session_replies").select("id, english, session:sessions(church_id)").eq("id", data.replyId).maybeSingle();
-    if (!reply) throw new Error("Reply not found");
-    await assertChurchOperator(context, reply.session.church_id);
-    const key = process.env["DEEPGRAM_API_KEY"];
-    if (!key) throw new Error("The speech service is not configured");
-    let spoken;
-    try {
-      spoken = await deepgramSpeak(reply.english, "en", key);
-    } catch (e) {
-      console.error("read-aloud failed:", e instanceof Error ? e.stack ?? e.message : e);
-      throw e instanceof Error ? e : new Error("Could not read the reply aloud");
-    }
-    void recordUsage(reply.session.church_id, "tts_chars", "deepgram", reply.english.length, "reply");
-    return { audioBase64: spoken.audioBase64, mimeType: spoken.mimeType };
   });
