@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Pause, Play, Square, Users } from "lucide-react";
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/sessions/$id")({
 function SessionPage() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const broadcast = useRef<(() => Promise<boolean>) | null>(null);
   const [, tick] = useState(0);
   const { data, isLoading } = useQuery({
     queryKey: ["session", id],
@@ -87,13 +88,13 @@ function SessionPage() {
           <div className="flex flex-wrap gap-2">
             {s.status === "live"
               ? <Btn onClick={() => change("paused")}><Pause className="size-4" /> Pause</Btn>
-              : <Btn primary onClick={() => change("live")}><Play className="size-4" /> {s.status === "paused" ? "Resume" : "Start interpretation"}</Btn>}
+              : <Btn primary onClick={async () => { const micOn = (await broadcast.current?.()) ?? false; if (micOn) await change("live"); }}><Play className="size-4" /> {s.status === "paused" ? "Resume" : "Start interpretation"}</Btn>}
             {s.status !== "draft" && <Btn onClick={() => { if (confirm("End this session for everyone?")) change("ended"); }}><Square className="size-4" /> Stop</Btn>}
           </div>
         )}
       </div>
 
-      {!ended && <Broadcaster sessionId={s.id} live={s.status === "live"} targetLanguages={s.target_languages} />}
+      {!ended && <Broadcaster sessionId={s.id} live={s.status === "live"} targetLanguages={s.target_languages} connectRef={broadcast} />}
 
       <div className="mt-10 grid gap-6 md:grid-cols-[1fr_280px]">
         <section className="rounded-3xl border bg-card p-6 shadow-card">

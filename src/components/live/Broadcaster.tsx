@@ -9,7 +9,7 @@ import { LIVE_LANGS, useLiveInterpreter, type LiveLang } from "@/components/live
 const LANG_NAME: Record<LiveLang, string> = { fr: "French", es: "Spanish" };
 
 /** Publishes the preacher's microphone to the session's live audio room. */
-export function Broadcaster({ sessionId, live, targetLanguages }: { sessionId: string; live: boolean; targetLanguages: string[] }) {
+export function Broadcaster({ sessionId, live, targetLanguages, connectRef }: { sessionId: string; live: boolean; targetLanguages: string[]; connectRef?: { current: (() => Promise<boolean>) | null } }) {
   const getToken = useServerFn(getBroadcastToken);
   const [state, setState] = useState<"off" | "connecting" | "on">("off");
   const [level, setLevel] = useState(0);
@@ -34,6 +34,13 @@ export function Broadcaster({ sessionId, live, targetLanguages }: { sessionId: s
       stop();
     }
   }
+  /** Connects the microphone if needed. Resolves true once it is on air-ready, false if it could not start. */
+  async function connectNow(): Promise<boolean> {
+    if (roomRef.current) return true;
+    await start();
+    return roomRef.current !== null;
+  }
+  useEffect(() => { if (connectRef) connectRef.current = connectNow; });
   function stop() {
     setConn(null);
     trackRef.current?.stop(); trackRef.current = null;

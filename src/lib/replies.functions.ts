@@ -70,7 +70,13 @@ export const speakReplyToPreacher = createServerFn({ method: "POST" })
     await assertChurchOperator(context, reply.session.church_id);
     const key = process.env["DEEPGRAM_API_KEY"];
     if (!key) throw new Error("The speech service is not configured");
-    const spoken = await deepgramSpeak(reply.english, "en", key);
-    await recordUsage(reply.session.church_id, "tts_chars", "deepgram", reply.english.length, "reply");
+    let spoken;
+    try {
+      spoken = await deepgramSpeak(reply.english, "en", key);
+    } catch (e) {
+      console.error("read-aloud failed:", e instanceof Error ? e.stack ?? e.message : e);
+      throw e instanceof Error ? e : new Error("Could not read the reply aloud");
+    }
+    void recordUsage(reply.session.church_id, "tts_chars", "deepgram", reply.english.length, "reply");
     return { audioBase64: spoken.audioBase64, mimeType: spoken.mimeType };
   });

@@ -94,7 +94,13 @@ export const interpretLivePiece = createServerFn({ method: "POST" })
     const { pcm, durationSeconds } = readPcmWav(bytes);
     validateDuration(durationSeconds, "interpret");
     const started = performance.now();
-    const out = await runInterpretation(pcm, data.targetLanguage, key);
+    let out;
+    try {
+      out = await runInterpretation(pcm, data.targetLanguage, key);
+    } catch (e) {
+      console.error("live piece failed:", e instanceof Error ? e.stack ?? e.message : e);
+      throw e instanceof Error ? e : new Error("Live piece failed");
+    }
     try {
       const { workerDb } = await import("@/lib/worker-db.server");
       await (workerDb() as any).from("channel_status").upsert({
@@ -102,8 +108,8 @@ export const interpretLivePiece = createServerFn({ method: "POST" })
         last_error: out.error?.slice(0, 1000) ?? null, latency_ms: Math.round(performance.now() - started), worker_id: "preacher-device", engine_id: null,
       }, { onConflict: "session_id,language" });
     } catch (e) { console.warn("channel status not saved:", e instanceof Error ? e.message : e); }
-    await recordUsage(s.church_id, "stt_seconds", "deepgram", durationSeconds, "live");
-    await recordUsage(s.church_id, "translation_chars", "deepl", out.transcript.length, "live");
-    await recordUsage(s.church_id, "tts_chars", "deepgram", out.translation.length, "live");
+    void recordUsage(s.church_id, "stt_seconds", "deepgram", durationSeconds, "live");
+    void recordUsage(s.church_id, "translation_chars", "deepl", out.transcript.length, "live");
+    void recordUsage(s.church_id, "tts_chars", "deepgram", out.translation.length, "live");
     return out;
   });
