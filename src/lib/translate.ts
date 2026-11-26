@@ -31,11 +31,21 @@ const deepl: TranslationProvider = {
   translate: async (text, sourceCode, targetCode) => {
     const apiKey = process.env["DEEPL_API_KEY"];
     if (!apiKey) throw new Error("DEEPL_API_KEY is not set");
-    const res = await fetch(deeplEndpoint(apiKey), {
+    const request = () => fetch(deeplEndpoint(apiKey), {
       method: "POST",
       headers: { Authorization: `DeepL-Auth-Key ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ text: [text], source_lang: sourceCode, target_lang: targetCode }),
+      signal: AbortSignal.timeout(15_000),
     });
+    // One retry for temporary failures only: a network drop, rate limit (429) or server error (5xx).
+    let res: Response;
+    try {
+      res = await request();
+      if (res.status === 429 || res.status >= 500) { await new Promise((r) => setTimeout(r, 800)); res = await request(); }
+    } catch {
+      await new Promise((r) => setTimeout(r, 800));
+      res = await request();
+    }
     if (!res.ok) {
       // Status and DeepL's message only; the key is never included.
       const detail = await res.text().catch(() => "");

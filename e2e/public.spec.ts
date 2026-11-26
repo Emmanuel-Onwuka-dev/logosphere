@@ -21,15 +21,16 @@ test("Get Started opens the create-account form and Sign In opens sign-in", asyn
 test("live demo starts listening and shows the microphone meter", async ({ page }) => {
   await page.goto("/");
   await page.waitForLoadState("networkidle");
-  const start = page.getByRole("button", { name: /Start listening/ });
+  const start = page.getByRole("button", { name: /Try the live demo/ });
   await start.scrollIntoViewIfNeeded();
   await start.click();
-  await expect(page.getByText(/Listening: no sound yet|Hearing sound/)).toBeVisible();
+  await expect(page.getByText(/Listening\. Start speaking|Hearing you/)).toBeVisible();
   await page.getByRole("button", { name: /Stop/ }).click();
 });
 
 test("the demo's language options are limited to French and Spanish", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "French" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Spanish" })).toBeEnabled();
+  const language = page.getByRole("combobox", { name: /Translate into/ });
+  await language.scrollIntoViewIfNeeded();
+  await expect(language.locator("option")).toHaveText(["🇫🇷 Français", "🇪🇸 Español"]);
 });
