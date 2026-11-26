@@ -148,12 +148,9 @@ export function TryLive() {
       </div>
 
       <div className="p-6">
-        {/* Mode toggle: Face-to-face is not built yet, so it is shown disabled. */}
-        <div className="flex rounded-full border bg-secondary/40 p-1" role="group" aria-label="Demo mode">
-          <span className="flex-1 rounded-full bg-foreground px-4 py-3 text-center text-sm font-medium text-background">Translate for me</span>
-          <span className="flex flex-1 items-center justify-center gap-2 px-4 py-3 text-center text-sm text-muted-foreground" aria-disabled="true">
-            Face-to-face <span className="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide">Soon</span>
-          </span>
+        {/* Single demo mode: Translate for me. */}
+        <div className="flex rounded-full border bg-foreground px-4 py-3 text-center text-sm font-medium text-background">
+          Translate for me
         </div>
 
         {/* Language pills */}
