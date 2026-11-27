@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Logosphere — Real-time multilingual church interpretation" },
-      { name: "description", content: "One voice, every language. Live AI sermon interpretation in French, Spanish, Portuguese, Igbo, Yoruba and Hausa — straight to congregants' phones." },
+      { name: "description", content: "One message, no language barriers. Live AI sermon interpretation in French and Spanish, straight to congregants' phones. Portuguese and Nigerian languages coming soon." },
       { property: "og:title", content: "Logosphere — One Message. No Language Barriers." },
       { property: "og:description", content: "Live AI sermon interpretation delivered to every congregant's smartphone and headphones." },
       { property: "og:type", content: "website" },
