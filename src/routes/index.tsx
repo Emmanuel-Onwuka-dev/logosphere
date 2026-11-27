@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Logosphere — Real-time multilingual church interpretation" },
       { name: "description", content: "One voice, every language. Live AI sermon interpretation in French, Spanish, Portuguese, Igbo, Yoruba and Hausa — straight to congregants' phones." },
-      { property: "og:title", content: "Logosphere — One Voice. Every Language." },
+      { property: "og:title", content: "Logosphere — One Message. No Language Barriers." },
       { property: "og:description", content: "Live AI sermon interpretation delivered to every congregant's smartphone and headphones." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -78,7 +78,7 @@ function Index() {
             <Sparkles className="size-3" /> Real-time sermon interpretation
           </span>
           <h1 className="mt-6 font-display text-5xl leading-[1.02] tracking-tight sm:text-7xl md:text-[5.5rem] animate-rise">
-            One Voice.<br />Every Language.
+            One Message.<br />No Language Barriers.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Every member deserves to understand the message. Bring real-time multilingual interpretation to your congregation, directly through their smartphones.
