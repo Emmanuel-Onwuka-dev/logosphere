@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu, Radio, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +49,7 @@ export function AppShell({ children, active }: { children: ReactNode; active: st
       <header className="border-b bg-card">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link to="/dashboard" className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-lg border-[1.5px] border-foreground"><Radio className="size-4" /></span>
+            <img src="/logo-mark.png" alt="" className="size-8" />
             <span className="font-display text-xl tracking-tight">Logosphere</span>
           </Link>
           <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">

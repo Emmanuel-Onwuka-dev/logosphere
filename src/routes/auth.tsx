@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,7 +79,7 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center bg-background px-5">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-10 flex items-center justify-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-lg border-[1.5px] border-foreground"><Radio className="size-4" /></span>
+          <img src="/logo-mark.png" alt="" className="size-8" />
           <span className="font-display text-xl tracking-tight">Logosphere</span>
         </Link>
         <div className="rounded-3xl border bg-card p-7 shadow-card">

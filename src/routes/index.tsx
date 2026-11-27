@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Play, Mic, Sparkles, Headphones, QrCode, Captions, Languages, Settings2, Radio, Users, Building2, Cpu, Sparkle } from "lucide-react";
+import { ArrowRight, Play, Mic, Sparkles, Headphones, QrCode, Captions, Languages, Settings2, Users, Building2, Cpu, Sparkle } from "lucide-react";
 import hero from "@/assets/hero-illustration.jpg";
 import { TryLive } from "@/components/landing/TryLive";
 import { TARGET_LANGUAGES, STATUS_LABEL, isComingSoon } from "@/lib/languages";
@@ -22,9 +22,7 @@ export const Route = createFileRoute("/")({
 function Logo() {
   return (
     <a href="/" className="flex items-center gap-2.5">
-      <span className="grid size-8 place-items-center rounded-lg border-[1.5px] border-foreground">
-        <Radio className="size-4" />
-      </span>
+      <img src="/logo-mark.png" alt="" className="size-8" />
       <span className="font-display text-xl tracking-tight">Logosphere</span>
     </a>
   );
